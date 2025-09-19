@@ -25,7 +25,6 @@ This advanced system automates the full lifecycle of GPU-backed LLM pods on RunP
 | `pod_config.json`             | ⚙️ Configuration file with model, GPU, cache, SSL, and runtime settings     |
 | `pod_state.json`              | 📊 Auto-generated state file storing pod ID, model, and runtime info        |
 | `.gitignore`                  | 🚫 Prevents committing sensitive files and local artifacts                 |
-| `requirements.txt`            | 📦 Python dependencies (FastAPI, httpx, uvicorn, requests)                 |
 | `README.md`                   | 📖 This comprehensive documentation                                        |
 
 ## 🧰 Prerequisites & Installation
@@ -49,11 +48,9 @@ This advanced system automates the full lifecycle of GPU-backed LLM pods on RunP
    ```
 
 2. **Install Python dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   # Or install manually:
-   pip install fastapi httpx uvicorn requests
-   ```
+    ```bash
+    pip install fastapi httpx uvicorn requests aiofiles
+    ```
 
 3. **Set up environment variables:**
    ```bash
