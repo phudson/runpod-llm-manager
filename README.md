@@ -64,6 +64,8 @@ This advanced system automates the full lifecycle of GPU-backed LLM pods on RunP
 
 > ✅ **No NGINX required!** The system uses a high-performance FastAPI proxy with built-in caching and monitoring.
 
+## ⏱️ Cron Setup (Optional)
+
 ### 🐧 WSL2 / Ubuntu Setup Notes
 
 To ensure `runpod-llm-manager` functions correctly inside WSL2 with Ubuntu:
@@ -119,9 +121,6 @@ WSL2 does not start `cron` automatically. To enable it:
    ```
    on login or system boot.
 
-
-## ⏱️ Cron Setup
-
 To automate pod lifecycle management and prevent lingering charges, add the following cron entries:
 
 ### 🔄 Watchdog / Expiry Check (Every 5 Minutes)
@@ -142,11 +141,9 @@ Ensures all pods are terminated at midnight regardless of state:
 
 > Replace `/path/to/runpod-llm-manager/` with the actual path to your script.
 > Ensure your user has permission to run Python without `sudo`.
+> These cron jobs work with the existing code and provide automated lifecycle management.
 
-These entries help enforce cost control and ensure pods never exceed their intended runtime.
-
-
-## 🔧 Configuration
+## � Configuration
 
 Create `pod_config.json` with comprehensive settings:
 
@@ -204,6 +201,9 @@ Create `pod_config.json` with comprehensive settings:
 | `max_cache_size` | int | 1000 | Maximum cached responses |
 | `max_cache_bytes` | int | 1GB | Maximum cache size in bytes |
 | `enable_profiling` | boolean | false | Enable debug/profiling endpoints |
+| `initial_wait_seconds` | int | 10 | Seconds to wait after pod creation before checking status |
+| `max_startup_attempts` | int | 20 | Maximum attempts to wait for pod to become ready |
+| `poll_interval_seconds` | int | 5 | Seconds between pod status checks during startup |
 ### 🔍 Discovering Supported Models via RunPod UI
 
 RunPod supports a wide range of open-source models for vLLM pods. To explore available options:
@@ -286,6 +286,7 @@ export RUNPOD_API_KEY="your-api-key"
 export MAX_CACHE_SIZE="2000"          # Increase cache size
 export CACHE_SIZE_BYTES="2147483648"  # 2GB cache
 export ENABLE_PROFILING="true"        # Enable debug endpoints
+export PREWARM_CACHE="true"           # Pre-populate cache with common patterns
 ```
 
 ## ✨ Advanced Features
@@ -322,7 +323,6 @@ export ENABLE_PROFILING="true"        # Enable debug endpoints
 
 ### 🤖 Automation & Reliability
 
-- **Cron Integration**: Automated pod lifecycle management
 - **Lock Files**: Prevents concurrent execution conflicts
 - **State Persistence**: Survives system restarts
 - **Error Recovery**: Automatic pod restart on failures
@@ -419,14 +419,11 @@ For full setup instructions, see [Sourcegraph's Cody installation guide](https:/
 
 ### 🧩 VSCode Kilo Code Extension Configuration
 
-To connect the Kilo Code extension to your locally hosted RunPod LLM proxy, you have several configuration options:
+To connect the Kilo Code extension to your locally hosted RunPod LLM proxy:
 
-#### Method 1: Extension Settings (Recommended)
-
-1. Open VSCode and go to **Extensions**
-2. Find and install the **Kilo Code** extension
-3. Go to **Settings** → **Extensions** → **Kilo Code**
-4. Configure the following settings:
+1. Install the **Kilo Code** extension in VSCode
+2. Go to VSCode Settings → Extensions → Kilo Code
+3. Configure the following basic settings:
 
 ```json
 {
@@ -438,210 +435,28 @@ To connect the Kilo Code extension to your locally hosted RunPod LLM proxy, you 
 }
 ```
 
-#### Method 2: VSCode Settings.json
-
-Alternatively, add these settings to your VSCode `settings.json`:
-
-```bash
-# Open settings.json
-File → Preferences → Settings → Open Settings (JSON)
-```
-
-Add the configuration:
-
-```json
-{
-  "kilo-code": {
-    "api": {
-      "baseUrl": "http://localhost:8000/v1",
-      "key": "sk-local-proxy"
-    },
-    "model": {
-      "name": "deepseek-coder-33b-awq"
-    },
-    "cache": {
-      "enabled": true,
-      "directory": "/tmp/llm_cache"
-    }
-  }
-}
-```
-
-#### Method 3: Environment Variables
-
-Set environment variables before starting VSCode:
-
-```bash
-export KILO_CODE_API_BASE_URL="http://localhost:8000/v1"
-export KILO_CODE_API_KEY="sk-local-proxy"
-export KILO_CODE_MODEL_NAME="deepseek-coder-33b-awq"
-export KILO_CODE_CACHE_ENABLED="true"
-export KILO_CODE_CACHE_DIR="/tmp/llm_cache"
-```
-
-#### Advanced Configuration Options
-
-For more advanced setups, you can configure additional options:
-
-```json
-{
-  "kilo-code": {
-    "api": {
-      "baseUrl": "http://localhost:8000/v1",
-      "key": "sk-local-proxy",
-      "timeout": 30,
-      "maxRetries": 3
-    },
-    "model": {
-      "name": "deepseek-coder-33b-awq",
-      "temperature": 0.7,
-      "maxTokens": 4096
-    },
-    "cache": {
-      "enabled": true,
-      "directory": "/tmp/llm_cache",
-      "maxSize": 1000,
-      "ttl": 3600
-    },
-    "logging": {
-      "level": "info",
-      "file": "/tmp/kilo-code.log"
-    }
-  }
-}
-```
-
-#### SSL/TLS Configuration
-
-If you enabled HTTPS for the proxy:
-
-```json
-{
-  "kilo-code": {
-    "api": {
-      "baseUrl": "https://localhost:8000/v1",
-      "key": "sk-local-proxy",
-      "verifySSL": false  // For self-signed certificates
-    }
-  }
-}
-```
-
-#### Custom Port Configuration
-
-If you changed the default proxy port:
-
-```json
-{
-  "kilo-code": {
-    "api": {
-      "baseUrl": "http://localhost:8081/v1"  // If using port 8081
-    }
-  }
-}
-```
-
 #### Testing the Configuration
 
 1. **Start the proxy:**
-   ```bash
-   python3 manage_pod.py
-   ```
+    ```bash
+    python3 manage_pod.py
+    ```
 
 2. **Verify proxy health:**
-   ```bash
-   curl http://localhost:8000/health
-   ```
+    ```bash
+    curl http://localhost:8000/health
+    ```
 
 3. **Test in VSCode:**
-   - Open a file in VSCode
-   - Use Kilo Code features (autocomplete, chat, etc.)
-   - Check that requests are going to your local proxy
+    - Open a Python file in VSCode
+    - Use Kilo Code autocomplete or chat features
+    - Verify requests are routed through your local proxy
 
-#### Troubleshooting Kilo Code + Proxy
+#### Troubleshooting
 
-##### Issue: Extension can't connect to proxy
-
-**Solutions:**
-```bash
-# Check if proxy is running
-ps aux | grep proxy_fastapi
-
-# Check proxy health
-curl http://localhost:8000/health
-
-# Verify VSCode settings
-# Settings → Extensions → Kilo Code → Check API settings
-```
-
-##### Issue: Authentication errors
-
-**Solution:**
-- Ensure the API key in VSCode settings matches: `"sk-local-proxy"`
-- Check that the proxy is accepting connections from VSCode
-
-##### Issue: Slow responses or timeouts
-
-**Solutions:**
-- Increase timeout in VSCode settings: `"kilo-code.api.timeout": 60`
-- Check proxy performance: `curl http://localhost:8000/metrics`
-- Verify cache is working: `curl http://localhost:8000/debug/cache`
-
-##### Issue: Cache not working
-
-**Solution:**
-- Ensure cache directory exists and is writable
-- Check VSCode cache settings are enabled
-- Clear cache if corrupted: `rm -rf /tmp/llm_cache/*`
-
-#### Performance Optimization for Kilo Code
-
-##### For Large Codebases
-
-```json
-{
-  "kilo-code": {
-    "cache": {
-      "enabled": true,
-      "maxSize": 5000,
-      "directory": "/fast/ssd/cache"
-    },
-    "model": {
-      "maxTokens": 8192
-    }
-  }
-}
-```
-
-##### For Memory-Constrained Systems
-
-```json
-{
-  "kilo-code": {
-    "cache": {
-      "enabled": true,
-      "maxSize": 500,
-      "directory": "/tmp/llm_cache"
-    },
-    "model": {
-      "maxTokens": 2048
-    }
-  }
-}
-```
-
-#### Integration Features
-
-When properly configured, Kilo Code will:
-
-- ✅ **Use intelligent caching** for faster responses
-- ✅ **Provide cost optimization** by reducing API calls
-- ✅ **Offer enhanced privacy** for local conversations
-- ✅ **Enable offline capability** for cached responses
-- ✅ **Deliver performance monitoring** through proxy metrics
-- ✅ **Support multiple models** through configuration switching
-
-This setup allows Kilo Code to leverage the full power of your RunPod LLM setup with enterprise-grade caching, monitoring, and performance optimization! 🚀
+- **Connection issues**: Ensure proxy is running on port 8000
+- **Authentication errors**: Verify the API key matches `"sk-local-proxy"`
+- **Slow responses**: Check cache is working with `curl http://localhost:8000/metrics`
 
 ---
 
@@ -695,14 +510,14 @@ ls -la /tmp/llm_cache/
 # Check if proxy is running
 ps aux | grep proxy_fastapi
 
-# View recent logs
-tail -f /var/log/runpod_watchdog.log
-
 # Check proxy health
 curl http://localhost:8000/health
 
 # View cache statistics
 curl http://localhost:8000/metrics
+
+# View comprehensive dashboard
+curl http://localhost:8000/dashboard
 ```
 
 ### 🔍 Debug Mode
@@ -754,201 +569,16 @@ mkdir -p /tmp/llm_cache
 
 ---
 
-## ⚡ Latency Optimization for Kilo Code
+## ⚡ Performance Optimization
 
-### 🚀 Critical Latency Reductions
+### Cache Performance Tips
 
-#### 1. **Ultra-Fast Cache Storage**
-```bash
-# Use RAM disk for maximum speed (Linux)
-sudo mkdir -p /mnt/ramdisk
-sudo mount -t tmpfs -o size=2G tmpfs /mnt/ramdisk
-export CACHE_DIR="/mnt/ramdisk/llm_cache"
+- **Use fast storage**: Place cache directory on SSD/NVMe for better performance
+- **Pre-warm cache**: Enable `PREWARM_CACHE=true` to populate cache with common patterns on startup
+- **Monitor cache hit rates**: Use `/metrics` endpoint to track cache effectiveness
+- **Adjust cache size**: Increase `MAX_CACHE_SIZE` for better hit rates on large codebases
 
-# Or use fastest SSD available
-export CACHE_DIR="/mnt/nvme/llm_cache"
-```
-
-#### 2. **Pre-warm Cache Strategy**
-```bash
-# Pre-populate cache with common queries
-curl -X POST http://localhost:8000/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"model": "deepseek-coder-33b-awq", "messages": [{"role": "user", "content": "def hello"}], "max_tokens": 50}'
-```
-
-#### 3. **Connection Pool Optimization**
-```json
-{
-  "proxy_port": 8000,
-  "max_cache_size": 10000,
-  "max_cache_bytes": 4294967296,
-  "enable_profiling": false
-}
-```
-
-### 🏗️ Advanced Performance Configurations
-
-#### **High-Performance Setup**
-```bash
-# Optimize for minimum latency
-export MAX_CACHE_SIZE="50000"          # Massive cache
-export CACHE_SIZE_BYTES="8589934592"   # 8GB cache
-export CACHE_DIR="/dev/shm/llm_cache"  # RAM disk
-export ENABLE_PROFILING="false"        # Disable debug overhead
-
-# Use HTTP/2 if supported
-export HTTP_VERSION="2"
-```
-
-#### **Memory-Optimized Setup**
-```bash
-# For systems with limited RAM
-export MAX_CACHE_SIZE="1000"
-export CACHE_SIZE_BYTES="536870912"    # 512MB cache
-export CACHE_DIR="/tmp/llm_cache"
-```
-
-### 🔧 Kilo Code Specific Optimizations
-
-#### **VSCode Extension Settings for Speed**
-```json
-{
-  "kilo-code": {
-    "api": {
-      "baseUrl": "http://localhost:8000/v1",
-      "key": "sk-local-proxy",
-      "timeout": 10,
-      "maxRetries": 1,
-      "keepAlive": true
-    },
-    "cache": {
-      "enabled": true,
-      "directory": "/dev/shm/kilo_cache",
-      "maxSize": 10000
-    },
-    "performance": {
-      "debounceMs": 150,
-      "maxConcurrentRequests": 3,
-      "streaming": true
-    }
-  }
-}
-```
-
-#### **Streaming Response Optimization**
-```json
-{
-  "kilo-code": {
-    "api": {
-      "streaming": true,
-      "streamTimeout": 5
-    }
-  }
-}
-```
-
-### 📊 Performance Monitoring
-
-#### **Real-Time Latency Tracking**
-```bash
-# Monitor response times
-watch -n 1 'curl -s http://localhost:8000/metrics | jq ".avg_response_time"'
-
-# Check cache hit rate
-curl -s http://localhost:8000/metrics | jq ".cache_hit_rate"
-
-# Monitor system resources
-htop  # or top
-```
-
-#### **Benchmarking Commands**
-```bash
-# Test cache performance
-time curl -X POST http://localhost:8000/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"model": "deepseek-coder-33b-awq", "messages": [{"role": "user", "content": "print hello"}], "max_tokens": 10}'
-
-# Test cold cache vs warm cache
-# First request (cold): ~2-5 seconds
-# Second request (warm): ~0.1-0.5 seconds
-```
-
-### 🏎️ Extreme Performance Mode
-
-#### **For Maximum Speed (Experimental)**
-```bash
-# Use Unix socket instead of TCP (if supported)
-export PROXY_SOCKET="/tmp/llm_proxy.sock"
-
-# Disable all logging
-export LOG_LEVEL="ERROR"
-
-# Use memory-mapped files for cache
-export CACHE_MODE="mmap"
-
-# Pre-allocate cache memory
-export PREALLOCATE_CACHE="true"
-```
-
-#### **Hardware Acceleration**
-```bash
-# Use GPU for cache operations (if available)
-export CACHE_GPU_ACCEL="true"
-
-# Optimize for specific CPU architecture
-export CPU_OPTIMIZATION="avx512"
-```
-
-### 🔄 Request Batching & Prefetching
-
-#### **Smart Prefetching**
-```json
-{
-  "kilo-code": {
-    "prefetch": {
-      "enabled": true,
-      "commonPatterns": true,
-      "contextAware": true
-    }
-  }
-}
-```
-
-### 📈 Expected Performance Improvements
-
-| Optimization | Latency Reduction | Cache Hit Rate | Cost Savings |
-|--------------|------------------|----------------|--------------|
-| RAM Disk Cache | 80-90% | 95%+ | 90%+ |
-| Pre-warming | 50-70% | 98%+ | 95%+ |
-| Connection Pooling | 20-40% | N/A | 10-20% |
-| Streaming | 30-50% | N/A | 15-25% |
-| **Combined** | **95%+** | **99%+** | **98%+** |
-
-### 🎯 Kilo Code Latency Optimization Checklist
-
-- ✅ **Use RAM disk for cache** (`/dev/shm` or `/mnt/ramdisk`)
-- ✅ **Pre-warm cache** with common code patterns
-- ✅ **Enable streaming responses** in VSCode settings
-- ✅ **Reduce timeout values** for faster failure detection
-- ✅ **Increase cache size** to 10,000+ entries
-- ✅ **Use SSD storage** minimum, NVMe preferred
-- ✅ **Monitor cache hit rates** and adjust accordingly
-- ✅ **Disable unnecessary logging** in production
-- ✅ **Use connection keep-alive** for persistent connections
-- ✅ **Implement request batching** for multiple completions
-
-### 🚨 Important Notes
-
-- **Memory Usage**: Large caches require significant RAM
-- **Disk I/O**: Monitor disk performance with large caches
-- **Network**: Ensure low-latency network between VSCode and proxy
-- **Resource Limits**: Adjust system limits for large deployments
-- **Monitoring**: Continuously monitor performance metrics
-
-These optimizations can reduce Kilo Code response times from **2-5 seconds to 0.1-0.5 seconds** for cached requests, providing near-instantaneous code completions! ⚡
-
-### SSL Performance
+### SSL/TLS Configuration
 ```json
 {
   "use_https": true,
@@ -989,9 +619,9 @@ This project is open source. Please ensure compliance with:
 
 ### Getting Help
 1. Check the troubleshooting section above
-2. Review logs: `tail -f /var/log/runpod_watchdog.log`
-3. Check proxy health: `curl http://localhost:8000/health`
-4. Enable verbose mode: `python3 manage_pod.py --verbose`
+2. Check proxy health: `curl http://localhost:8000/health`
+3. Enable verbose mode: `python3 manage_pod.py --verbose`
+4. Check pod status: `python3 manage_pod.py --refresh-catalog`
 
 ### Common Resources
 - [RunPod Documentation](https://docs.runpod.io/)
@@ -1000,4 +630,4 @@ This project is open source. Please ensure compliance with:
 
 ---
 
-*Last updated: 2025-01-19*
+*Last updated: 2025-09-22*
