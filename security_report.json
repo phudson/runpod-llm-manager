@@ -1,17 +1,17 @@
 {
-  "timestamp": "2025-10-07T13:51:59.418171+00:00",
+  "timestamp": "2025-10-07T18:06:51.414721+00:00",
   "project": "runpod-llm-manager",
   "security_assessment": {
     "sbom_generated": true,
     "dependency_scan": {
-      "timestamp": "2025-10-07T13:52:01.475479+00:00",
+      "timestamp": "2025-10-07T18:06:54.234576+00:00",
       "tool": "safety",
       "vulnerabilities_found": 0,
       "vulnerabilities": [],
       "status": "clean"
     },
     "license_check": {
-      "timestamp": "2025-10-07T13:52:04.020180+00:00",
+      "timestamp": "2025-10-07T18:06:57.555374+00:00",
       "tool": "pip-licenses",
       "licenses": [
         {
@@ -38,6 +38,11 @@
           "License": "BSD",
           "Name": "PySocks",
           "Version": "1.7.1"
+        },
+        {
+          "License": "MIT License",
+          "Name": "PyYAML",
+          "Version": "6.0.3"
         },
         {
           "License": "BSD License",
@@ -235,6 +240,11 @@
           "Version": "1.0.9"
         },
         {
+          "License": "MIT License",
+          "Name": "httptools",
+          "Version": "0.6.4"
+        },
+        {
           "License": "BSD License",
           "Name": "httpx",
           "Version": "0.28.1"
@@ -243,6 +253,11 @@
           "License": "BSD License",
           "Name": "idna",
           "Version": "3.7"
+        },
+        {
+          "License": "MIT License",
+          "Name": "iniconfig",
+          "Version": "2.1.0"
         },
         {
           "License": "ISC License (ISCL)",
@@ -420,6 +435,16 @@
           "Version": "3.2.5"
         },
         {
+          "License": "MIT License",
+          "Name": "pytest",
+          "Version": "8.4.2"
+        },
+        {
+          "License": "UNKNOWN",
+          "Name": "pytest-asyncio",
+          "Version": "1.2.0"
+        },
+        {
           "License": "Apache Software License; BSD License",
           "Name": "python-dateutil",
           "Version": "2.9.0.post0"
@@ -483,6 +508,16 @@
           "License": "MIT License",
           "Name": "ruamel.yaml.clib",
           "Version": "0.2.12"
+        },
+        {
+          "License": "MIT License",
+          "Name": "runpod-llm-manager",
+          "Version": "0.1.0"
+        },
+        {
+          "License": "MIT License",
+          "Name": "runpod-llm-manager",
+          "Version": "0.1.0"
         },
         {
           "License": "MIT License",
@@ -580,9 +615,24 @@
           "Version": "0.35.0"
         },
         {
+          "License": "Apache Software License; MIT License",
+          "Name": "uvloop",
+          "Version": "0.21.0"
+        },
+        {
+          "License": "MIT License",
+          "Name": "watchfiles",
+          "Version": "1.1.0"
+        },
+        {
           "License": "BSD License",
           "Name": "webcolors",
           "Version": "24.11.1"
+        },
+        {
+          "License": "BSD License",
+          "Name": "websockets",
+          "Version": "15.0.1"
         },
         {
           "License": "BSD License",

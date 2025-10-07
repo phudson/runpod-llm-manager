@@ -6,14 +6,14 @@ Provides testable versions of all dependencies
 from typing import Dict, Any, Optional, List
 from unittest.mock import AsyncMock
 import json
-from dependencies import (
+from runpod_llm_manager.dependencies import (
     HTTPClientProtocol,
     CacheProtocol,
     FileSystemProtocol,
     RateLimiterProtocol,
     Dependencies
 )
-from config import AppConfig
+from runpod_llm_manager.config import AppConfig
 
 
 class MockHTTPClient:

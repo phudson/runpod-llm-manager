@@ -14,9 +14,9 @@ import re
 import requests
 from datetime import datetime, timedelta, timezone
 
-from config import config
-from dependencies import get_default_dependencies
-from services import PodManagementService
+from .config import config
+from .dependencies import get_default_dependencies
+from .services import PodManagementService
 
 # CLI flags
 verbose = "--verbose" in sys.argv

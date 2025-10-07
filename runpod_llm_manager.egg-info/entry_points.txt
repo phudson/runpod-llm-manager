@@ -1,0 +1,2 @@
+[console_scripts]
+runpod-llm-manager = runpod_llm_manager.manage_pod:main

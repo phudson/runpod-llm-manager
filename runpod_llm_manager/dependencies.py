@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from typing import Protocol, Optional, Dict, Any, List
 from dataclasses import dataclass
 import httpx
-from config import AppConfig
+from .config import AppConfig
 
 
 class HTTPClientProtocol(Protocol):
@@ -243,7 +243,7 @@ def get_default_dependencies() -> Dependencies:
     """Get default dependencies (for backward compatibility)."""
     global _default_deps
     if _default_deps is None:
-        from config import config
+        from .config import config
         _default_deps = create_production_dependencies(config)
     return _default_deps
 

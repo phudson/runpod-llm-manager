@@ -34,22 +34,21 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -e .[dev,security]
 
       - name: Run syntax checks
         run: |
-          python -m py_compile proxy_fastapi.py
-          python -m py_compile manage_pod.py
-          python -m py_compile config.py
-          python -m py_compile dependencies.py
-          python -m py_compile services.py
+          python -m py_compile runpod_llm_manager/proxy_fastapi.py
+          python -m py_compile runpod_llm_manager/manage_pod.py
+          python -m py_compile runpod_llm_manager/config.py
+          python -m py_compile runpod_llm_manager/dependencies.py
+          python -m py_compile runpod_llm_manager/services.py
           python -m py_compile security_utils.py
 
       - name: Run tests
         run: |
           pytest tests/ -v --tb=short --asyncio-mode=auto \
-            --cov=proxy_fastapi --cov=manage_pod --cov=config --cov=dependencies \
-            --cov=services --cov-report=xml --cov-report=term-missing
+            --cov=runpod_llm_manager --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -113,7 +112,7 @@ jobs:
 
       - name: Run mypy
         run: |
-          mypy proxy_fastapi.py manage_pod.py config.py dependencies.py services.py \
+          mypy runpod_llm_manager/ \
             --ignore-missing-imports --no-strict-optional
 
   build:

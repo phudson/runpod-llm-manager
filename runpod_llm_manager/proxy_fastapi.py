@@ -11,10 +11,10 @@ from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from config import config
-from dependencies import Dependencies, get_default_dependencies
-from services import LLMService, HealthService, MetricsService
-from proxy_fastapi_models import ChatCompletionRequest
+from .config import config
+from .dependencies import Dependencies, get_default_dependencies
+from .services import LLMService, HealthService, MetricsService
+from .proxy_fastapi_models import ChatCompletionRequest
 
 # Setup logging
 logging.basicConfig(

@@ -8,8 +8,8 @@ from typing import Dict, Any
 from httpx import AsyncClient
 from fastapi.testclient import TestClient
 
-from config import AppConfig
-from dependencies import Dependencies, create_test_dependencies
+from runpod_llm_manager.config import AppConfig
+from runpod_llm_manager.dependencies import Dependencies, create_test_dependencies
 from test_mocks import (
     create_test_config,
     create_mock_dependencies,
@@ -19,7 +19,7 @@ from test_mocks import (
     create_test_completion_request,
     create_test_pod_config
 )
-from proxy_fastapi import app
+from runpod_llm_manager.proxy_fastapi import app
 
 
 @pytest.fixture

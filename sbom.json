@@ -1,8 +1,8 @@
 {
   "components": [
     {
-      "bom-ref": "requirements-L6",
-      "description": "requirements line 6: aiofiles>=23.0.0",
+      "bom-ref": "requirements-L7",
+      "description": "requirements line 7: aiofiles>=23.0.0",
       "externalReferences": [
         {
           "comment": "implicit dist url",
@@ -85,6 +85,20 @@
       "type": "library"
     },
     {
+      "bom-ref": "requirements-L6",
+      "description": "requirements line 6: pydantic-settings>=2.0.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/pydantic-settings/"
+        }
+      ],
+      "name": "pydantic-settings",
+      "purl": "pkg:pypi/pydantic-settings",
+      "type": "library"
+    },
+    {
       "bom-ref": "requirements-L20",
       "description": "requirements line 20: pytest>=7.0.0",
       "externalReferences": [
@@ -113,17 +127,17 @@
       "type": "library"
     },
     {
-      "bom-ref": "requirements-L7",
-      "description": "requirements line 7: requests>=2.31.0",
+      "bom-ref": "requirements-L22",
+      "description": "requirements line 22: pytest-mock>=3.10.0",
       "externalReferences": [
         {
           "comment": "implicit dist url",
           "type": "distribution",
-          "url": "https://pypi.org/simple/requests/"
+          "url": "https://pypi.org/simple/pytest-mock/"
         }
       ],
-      "name": "requests",
-      "purl": "pkg:pypi/requests",
+      "name": "pytest-mock",
+      "purl": "pkg:pypi/pytest-mock",
       "type": "library"
     },
     {
@@ -181,6 +195,9 @@
       "ref": "requirements-L21"
     },
     {
+      "ref": "requirements-L22"
+    },
+    {
       "ref": "requirements-L3"
     },
     {
@@ -197,7 +214,7 @@
     }
   ],
   "metadata": {
-    "timestamp": "2025-10-07T13:52:01.475081+00:00",
+    "timestamp": "2025-10-07T18:06:54.233948+00:00",
     "tools": [
       {
         "vendor": "CycloneDX",
@@ -245,7 +262,7 @@
       }
     ]
   },
-  "serialNumber": "urn:uuid:aaafc8eb-395d-40b4-ba4e-4ece3b714776",
+  "serialNumber": "urn:uuid:b72444f1-2665-4710-ade5-be3ea2b6e02c",
   "version": 1,
   "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
   "bomFormat": "CycloneDX",

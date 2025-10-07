@@ -5,9 +5,9 @@ Tests for business logic services
 import pytest
 from unittest.mock import AsyncMock, patch
 
-from services import LLMService, PodManagementService, HealthService
+from runpod_llm_manager.services import LLMService, PodManagementService, HealthService
 from test_mocks import create_test_config, create_mock_dependencies
-from proxy_fastapi_models import ChatCompletionRequest, ChatMessage
+from runpod_llm_manager.proxy_fastapi_models import ChatCompletionRequest, ChatMessage
 
 
 class TestLLMService:

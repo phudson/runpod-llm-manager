@@ -9,9 +9,9 @@ import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta, timezone
 
-from config import AppConfig
-from dependencies import Dependencies
-from proxy_fastapi_models import ChatCompletionRequest, ChatMessage
+from .config import AppConfig
+from .dependencies import Dependencies
+from .proxy_fastapi_models import ChatCompletionRequest, ChatMessage
 
 logger = logging.getLogger(__name__)
 
@@ -202,7 +202,7 @@ class MetricsService:
 def create_llm_service(deps: Optional[Dependencies] = None) -> LLMService:
     """Create LLM service instance."""
     if deps is None:
-        from dependencies import get_default_dependencies
+        from .dependencies import get_default_dependencies
         deps = get_default_dependencies()
     return LLMService(deps)
 
@@ -210,7 +210,7 @@ def create_llm_service(deps: Optional[Dependencies] = None) -> LLMService:
 def create_pod_management_service(deps: Optional[Dependencies] = None) -> PodManagementService:
     """Create pod management service instance."""
     if deps is None:
-        from dependencies import get_default_dependencies
+        from .dependencies import get_default_dependencies
         deps = get_default_dependencies()
     return PodManagementService(deps)
 
@@ -218,7 +218,7 @@ def create_pod_management_service(deps: Optional[Dependencies] = None) -> PodMan
 def create_health_service(deps: Optional[Dependencies] = None) -> HealthService:
     """Create health service instance."""
     if deps is None:
-        from dependencies import get_default_dependencies
+        from .dependencies import get_default_dependencies
         deps = get_default_dependencies()
     return HealthService(deps)
 
@@ -226,6 +226,6 @@ def create_health_service(deps: Optional[Dependencies] = None) -> HealthService:
 def create_metrics_service(deps: Optional[Dependencies] = None) -> MetricsService:
     """Create metrics service instance."""
     if deps is None:
-        from dependencies import get_default_dependencies
+        from .dependencies import get_default_dependencies
         deps = get_default_dependencies()
     return MetricsService(deps)
