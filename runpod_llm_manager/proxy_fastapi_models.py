@@ -4,7 +4,12 @@ Input validation and data models
 """
 
 from pydantic import BaseModel, Field, field_validator
-from typing import List, Annotated
+try:
+    from typing import List, Annotated
+except ImportError:
+    # Python 3.8 compatibility
+    from typing import List
+    from typing_extensions import Annotated
 import re
 
 
