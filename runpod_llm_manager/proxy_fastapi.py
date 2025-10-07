@@ -6,7 +6,7 @@ Modern service-layer architecture with dependency injection and comprehensive se
 import logging
 import time
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -240,7 +240,7 @@ if config.test_mode or True:  # Enable for development
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn_config = {
+    uvicorn_config: dict[str, Any] = {
         "app": app,
         "host": "0.0.0.0",
         "port": int(config.__dict__.get("port", 8000)),  # Would need to add to config
