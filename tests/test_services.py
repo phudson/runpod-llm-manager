@@ -23,12 +23,10 @@ class TestLLMService:
         """Create sample completion request."""
         return ChatCompletionRequest(
             model="test-model",
-            messages=[
-                ChatMessage(role="user", content="Hello, world!")
-            ],
+            messages=[ChatMessage(role="user", content="Hello, world!")],
             max_tokens=100,
             temperature=0.7,
-            stream=False
+            stream=False,
         )
 
     @pytest.mark.asyncio
@@ -53,9 +51,7 @@ class TestLLMService:
         """Test cache miss scenario."""
         # Setup mock response
         mock_response = {"result": "from_api"}
-        mock_deps.http_client.responses = {
-            mock_deps.config.runpod_endpoint: mock_response
-        }
+        mock_deps.http_client.responses = {mock_deps.config.runpod_endpoint: mock_response}
 
         # Process request
         response = await service.process_completion_request(sample_request)
@@ -76,14 +72,14 @@ class TestLLMService:
             messages=[ChatMessage(role="user", content="hello")],
             max_tokens=50,
             temperature=0.7,
-            stream=False
+            stream=False,
         )
         request2 = ChatCompletionRequest(
             model="test",
             messages=[ChatMessage(role="user", content="hello")],
             max_tokens=50,
             temperature=0.7,
-            stream=False
+            stream=False,
         )
 
         key1 = service._generate_cache_key(request1)
@@ -98,14 +94,14 @@ class TestLLMService:
             messages=[ChatMessage(role="user", content="hello")],
             max_tokens=50,
             temperature=0.7,
-            stream=False
+            stream=False,
         )
         request2 = ChatCompletionRequest(
             model="test2",
             messages=[ChatMessage(role="user", content="hello")],
             max_tokens=50,
             temperature=0.7,
-            stream=False
+            stream=False,
         )
 
         key1 = service._generate_cache_key(request1)
@@ -149,11 +145,7 @@ class TestPodManagementService:
     async def test_get_pod_status_success(self, service, mock_deps):
         """Test successful pod status retrieval."""
         pod_id = "test-pod-123"
-        mock_status = {
-            "id": pod_id,
-            "status": "RUNNING",
-            "ip": "192.168.1.100"
-        }
+        mock_status = {"id": pod_id, "status": "RUNNING", "ip": "192.168.1.100"}
 
         mock_deps.http_client.responses = {
             f"{mock_deps.config.runpod_endpoint.replace('/v1/chat/completions', '/graphql')}": {
@@ -202,6 +194,7 @@ class TestHealthService:
         """Test health status when rate limited."""
         # Create a new mock rate limiter with 0 remaining requests
         from test_mocks import MockRateLimiter
+
         exhausted_limiter = MockRateLimiter(always_allow=False, remaining_requests=0)
         mock_deps.rate_limiter = exhausted_limiter
 

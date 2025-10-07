@@ -22,10 +22,7 @@ class LLMService:
     def __init__(self, deps: Dependencies):
         self.deps = deps
 
-    async def process_completion_request(
-        self,
-        request: ChatCompletionRequest
-    ) -> Dict[str, Any]:
+    async def process_completion_request(self, request: ChatCompletionRequest) -> Dict[str, Any]:
         """Process a chat completion request with caching."""
         # Generate cache key
         cache_key = self._generate_cache_key(request)
@@ -43,10 +40,7 @@ class LLMService:
         payload = request.model_dump()
 
         # Make API call
-        response = await self.deps.http_client.post(
-            self.deps.config.runpod_endpoint,
-            json=payload
-        )
+        response = await self.deps.http_client.post(self.deps.config.runpod_endpoint, json=payload)
 
         # Cache the result
         await self.deps.cache.set(cache_key, response)
@@ -87,13 +81,13 @@ class PodManagementService:
             "containerDiskInGb": 20,
             "volumeInGb": 0,
             "startJupyter": False,
-            "name": "runpod-llm"
+            "name": "runpod-llm",
         }
 
         response = await self.deps.http_client.post(
             self.deps.config.runpod_endpoint.replace("/v1/chat/completions", "/graphql"),
             json={"query": mutation, "variables": {"input": input_data}},
-            headers={"Authorization": f"Bearer {self.deps.config.runpod_api_key}"}
+            headers={"Authorization": f"Bearer {self.deps.config.runpod_api_key}"},
         )
 
         return response["data"]["podCreate"]["id"]
@@ -118,7 +112,7 @@ class PodManagementService:
         response = await self.deps.http_client.post(
             self.deps.config.runpod_endpoint.replace("/v1/chat/completions", "/graphql"),
             json={"query": query, "variables": {"id": pod_id}},
-            headers={"Authorization": f"Bearer {self.deps.config.runpod_api_key}"}
+            headers={"Authorization": f"Bearer {self.deps.config.runpod_api_key}"},
         )
 
         return response["data"]["pod"]
@@ -136,7 +130,7 @@ class PodManagementService:
         await self.deps.http_client.post(
             self.deps.config.runpod_endpoint.replace("/v1/chat/completions", "/graphql"),
             json={"query": mutation, "variables": {"id": pod_id}},
-            headers={"Authorization": f"Bearer {self.deps.config.runpod_api_key}"}
+            headers={"Authorization": f"Bearer {self.deps.config.runpod_api_key}"},
         )
 
 
@@ -169,8 +163,8 @@ class HealthService:
                 "rate_limit_limit": self.deps.config.rate_limit_requests,
                 "rate_limit_window_seconds": self.deps.config.rate_limit_window,
                 "https_enabled": self.deps.config.use_https,
-                "cors_enabled": True
-            }
+                "cors_enabled": True,
+            },
         }
 
 
@@ -193,16 +187,18 @@ class MetricsService:
             "cache_entries": 0,
             "cache_size_bytes": 0,
             "cache_hit_rate": 0.0,
-            "error_rate": 0.0
+            "error_rate": 0.0,
         }
 
 
 # Service factory functions
 
+
 def create_llm_service(deps: Optional[Dependencies] = None) -> LLMService:
     """Create LLM service instance."""
     if deps is None:
         from .dependencies import get_default_dependencies
+
         deps = get_default_dependencies()
     return LLMService(deps)
 
@@ -211,6 +207,7 @@ def create_pod_management_service(deps: Optional[Dependencies] = None) -> PodMan
     """Create pod management service instance."""
     if deps is None:
         from .dependencies import get_default_dependencies
+
         deps = get_default_dependencies()
     return PodManagementService(deps)
 
@@ -219,6 +216,7 @@ def create_health_service(deps: Optional[Dependencies] = None) -> HealthService:
     """Create health service instance."""
     if deps is None:
         from .dependencies import get_default_dependencies
+
         deps = get_default_dependencies()
     return HealthService(deps)
 
@@ -227,5 +225,6 @@ def create_metrics_service(deps: Optional[Dependencies] = None) -> MetricsServic
     """Create metrics service instance."""
     if deps is None:
         from .dependencies import get_default_dependencies
+
         deps = get_default_dependencies()
     return MetricsService(deps)

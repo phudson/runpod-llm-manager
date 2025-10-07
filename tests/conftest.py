@@ -17,7 +17,7 @@ from test_mocks import (
     create_pod_status_response,
     create_completion_response,
     create_test_completion_request,
-    create_test_pod_config
+    create_test_pod_config,
 )
 from runpod_llm_manager.proxy_fastapi import app
 
@@ -63,7 +63,7 @@ def mock_http_client():
 
     responses = {
         "http://mock-runpod:4010/v1/chat/completions": create_completion_response(),
-        "http://mock-runpod:4010/graphql": create_pod_create_response()
+        "http://mock-runpod:4010/graphql": create_pod_create_response(),
     }
 
     return MockHTTPClient(responses)
@@ -106,11 +106,9 @@ def valid_completion_payload() -> Dict[str, Any]:
     """Valid completion request payload."""
     return {
         "model": "test-model",
-        "messages": [
-            {"role": "user", "content": "Hello, world!"}
-        ],
+        "messages": [{"role": "user", "content": "Hello, world!"}],
         "max_tokens": 100,
-        "temperature": 0.7
+        "temperature": 0.7,
     }
 
 
@@ -121,7 +119,7 @@ def invalid_completion_payload() -> Dict[str, Any]:
         "model": "",  # Invalid: empty model
         "messages": [],  # Invalid: empty messages
         "max_tokens": 5000,  # Invalid: too many tokens
-        "temperature": 3.0  # Invalid: temperature too high
+        "temperature": 3.0,  # Invalid: temperature too high
     }
 
 
@@ -130,10 +128,8 @@ def oversized_payload() -> Dict[str, Any]:
     """Payload that exceeds size limits."""
     return {
         "model": "test-model",
-        "messages": [
-            {"role": "user", "content": "x" * 60000}  # 60KB content
-        ],
-        "max_tokens": 100
+        "messages": [{"role": "user", "content": "x" * 60000}],  # 60KB content
+        "max_tokens": 100,
     }
 
 
@@ -142,6 +138,7 @@ def oversized_payload() -> Dict[str, Any]:
 def rate_limited_client():
     """Client that has exceeded rate limits."""
     from test_mocks import MockRateLimiter
+
     limiter = MockRateLimiter(always_allow=False, remaining_requests=0)
     return limiter
 
@@ -150,6 +147,7 @@ def rate_limited_client():
 def healthy_rate_limiter():
     """Rate limiter with available requests."""
     from test_mocks import MockRateLimiter
+
     return MockRateLimiter(always_allow=True, remaining_requests=50)
 
 
@@ -158,6 +156,7 @@ def healthy_rate_limiter():
 def populated_cache():
     """Cache with some test data."""
     from test_mocks import MockCache
+
     cache = MockCache()
     cache.store["test-key"] = {"cached": "response"}
     return cache
@@ -167,4 +166,5 @@ def populated_cache():
 def empty_cache():
     """Empty cache for testing."""
     from test_mocks import MockCache
+
     return MockCache()

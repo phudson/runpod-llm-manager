@@ -11,7 +11,7 @@ from runpod_llm_manager.dependencies import (
     CacheProtocol,
     FileSystemProtocol,
     RateLimiterProtocol,
-    Dependencies
+    Dependencies,
 )
 from runpod_llm_manager.config import AppConfig
 
@@ -25,15 +25,15 @@ class MockHTTPClient:
         self.should_fail = False
         self.fail_with_exception = None
 
-    async def post(self, url: str, json: Optional[Dict[str, Any]] = None,
-                   headers: Optional[Dict[str, str]] = None, **kwargs) -> Dict[str, Any]:
+    async def post(
+        self,
+        url: str,
+        json: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
         """Record request and return mock response."""
-        self.requests_made.append({
-            "method": "POST",
-            "url": url,
-            "json": json,
-            "headers": headers
-        })
+        self.requests_made.append({"method": "POST", "url": url, "json": json, "headers": headers})
 
         if self.should_fail:
             if self.fail_with_exception:
@@ -44,10 +44,7 @@ class MockHTTPClient:
 
     async def get(self, url: str, **kwargs) -> Dict[str, Any]:
         """Mock GET request."""
-        self.requests_made.append({
-            "method": "GET",
-            "url": url
-        })
+        self.requests_made.append({"method": "GET", "url": url})
 
         if self.should_fail:
             if self.fail_with_exception:
@@ -148,7 +145,7 @@ def create_test_config(**overrides) -> AppConfig:
         "enable_profiling": False,
         "use_https": False,
         "test_mode": True,
-        "mock_runpod_url": "http://mock-runpod:4010"
+        "mock_runpod_url": "http://mock-runpod:4010",
     }
 
     # Apply overrides
@@ -168,7 +165,7 @@ def create_mock_dependencies(
     config: Optional[AppConfig] = None,
     http_responses: Optional[Dict[str, Any]] = None,
     cache_data: Optional[Dict[str, Dict[str, Any]]] = None,
-    filesystem_data: Optional[Dict[str, str]] = None
+    filesystem_data: Optional[Dict[str, str]] = None,
 ) -> Dependencies:
     """Create mock dependencies for testing."""
     if config is None:
@@ -179,26 +176,18 @@ def create_mock_dependencies(
         http_client=MockHTTPClient(http_responses),
         cache=MockCache(cache_data),
         filesystem=MockFileSystem(filesystem_data),
-        rate_limiter=MockRateLimiter(always_allow=True, remaining_requests=1000)
+        rate_limiter=MockRateLimiter(always_allow=True, remaining_requests=1000),
     )
 
 
 # Common test fixtures
 def create_pod_create_response(pod_id: str = "test-pod-123") -> Dict[str, Any]:
     """Create mock pod creation response."""
-    return {
-        "data": {
-            "podCreate": {
-                "id": pod_id
-            }
-        }
-    }
+    return {"data": {"podCreate": {"id": pod_id}}}
 
 
 def create_pod_status_response(
-    pod_id: str = "test-pod-123",
-    status: str = "RUNNING",
-    ip: str = "192.168.1.100"
+    pod_id: str = "test-pod-123", status: str = "RUNNING", ip: str = "192.168.1.100"
 ) -> Dict[str, Any]:
     """Create mock pod status response."""
     return {
@@ -207,13 +196,7 @@ def create_pod_status_response(
                 "id": pod_id,
                 "status": status,
                 "ip": ip,
-                "ports": [
-                    {
-                        "ip": ip,
-                        "privatePort": 8000,
-                        "publicPort": 8000
-                    }
-                ]
+                "ports": [{"ip": ip, "privatePort": 8000, "publicPort": 8000}],
             }
         }
     }
@@ -226,19 +209,8 @@ def create_completion_response(content: str = "Test response") -> Dict[str, Any]
         "object": "text_completion",
         "created": 1234567890,
         "model": "test-model",
-        "choices": [
-            {
-                "text": content,
-                "index": 0,
-                "logprobs": None,
-                "finish_reason": "stop"
-            }
-        ],
-        "usage": {
-            "prompt_tokens": 10,
-            "completion_tokens": 20,
-            "total_tokens": 30
-        }
+        "choices": [{"text": content, "index": 0, "logprobs": None, "finish_reason": "stop"}],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
     }
 
 
@@ -246,31 +218,24 @@ def create_completion_response(content: str = "Test response") -> Dict[str, Any]
 def create_test_completion_request(
     model: str = "test-model",
     messages: Optional[List[Dict[str, str]]] = None,
-    max_tokens: int = 100
+    max_tokens: int = 100,
 ) -> Dict[str, Any]:
     """Create test completion request data."""
     if messages is None:
-        messages = [
-            {"role": "user", "content": "Hello, world!"}
-        ]
+        messages = [{"role": "user", "content": "Hello, world!"}]
 
-    return {
-        "model": model,
-        "messages": messages,
-        "max_tokens": max_tokens,
-        "temperature": 0.7
-    }
+    return {"model": model, "messages": messages, "max_tokens": max_tokens, "temperature": 0.7}
 
 
 def create_test_pod_config(
     model_store_id: str = "deepseek-ai/deepseek-coder-33b-awq",
     gpu_type: str = "A6000",
-    runtime_seconds: int = 1800
+    runtime_seconds: int = 1800,
 ) -> Dict[str, Any]:
     """Create test pod configuration."""
     return {
         "modelStoreId": model_store_id,
         "gpu_type_id": gpu_type,
         "runtime_seconds": runtime_seconds,
-        "template_id": "vllm"
+        "template_id": "vllm",
     }

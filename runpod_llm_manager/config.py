@@ -14,93 +14,54 @@ class AppConfig(BaseSettings):
 
     # API Settings
     runpod_endpoint: str = Field(
-        default="http://localhost:8000/v1/chat/completions",
-        description="RunPod API endpoint URL"
+        default="http://localhost:8000/v1/chat/completions", description="RunPod API endpoint URL"
     )
     runpod_api_key: Optional[str] = Field(
-        default=None,
-        description="RunPod API key (required for production)"
+        default=None, description="RunPod API key (required for production)"
     )
 
     # Cache Settings
-    cache_dir: str = Field(
-        default="/tmp/llm_cache",
-        description="Directory for cache files"
-    )
+    cache_dir: str = Field(default="/tmp/llm_cache", description="Directory for cache files")
     max_cache_size: int = Field(
-        default=1000,
-        description="Maximum number of cached responses",
-        ge=1
+        default=1000, description="Maximum number of cached responses", ge=1
     )
     cache_size_bytes: int = Field(
-        default=1073741824,  # 1GB
-        description="Maximum cache size in bytes",
-        ge=1024
+        default=1073741824, description="Maximum cache size in bytes", ge=1024  # 1GB
     )
 
     # Security Settings
     rate_limit_requests: int = Field(
-        default=60,
-        description="Number of requests allowed per time window",
-        ge=1
+        default=60, description="Number of requests allowed per time window", ge=1
     )
     rate_limit_window: int = Field(
-        default=60,
-        description="Rate limit time window in seconds",
-        ge=1
+        default=60, description="Rate limit time window in seconds", ge=1
     )
     max_request_size: int = Field(
-        default=1048576,  # 1MB
-        description="Maximum request size in bytes",
-        ge=1024
+        default=1048576, description="Maximum request size in bytes", ge=1024  # 1MB
     )
     max_content_length: int = Field(
-        default=50000,  # 50KB
-        description="Maximum content length for messages",
-        ge=100
+        default=50000, description="Maximum content length for messages", ge=100  # 50KB
     )
 
     # Feature Flags
-    enable_profiling: bool = Field(
-        default=False,
-        description="Enable debug profiling endpoints"
-    )
-    use_https: bool = Field(
-        default=False,
-        description="Enable HTTPS mode"
-    )
+    enable_profiling: bool = Field(default=False, description="Enable debug profiling endpoints")
+    use_https: bool = Field(default=False, description="Enable HTTPS mode")
 
     # SSL Settings
-    ssl_cert: Optional[str] = Field(
-        default=None,
-        description="Path to SSL certificate file"
-    )
-    ssl_key: Optional[str] = Field(
-        default=None,
-        description="Path to SSL private key file"
-    )
+    ssl_cert: Optional[str] = Field(default=None, description="Path to SSL certificate file")
+    ssl_key: Optional[str] = Field(default=None, description="Path to SSL private key file")
 
     # CORS Settings
     allowed_origins: str = Field(
         default="http://localhost:3000,http://127.0.0.1:3000,http://localhost:8080",
-        description="Comma-separated list of allowed CORS origins"
+        description="Comma-separated list of allowed CORS origins",
     )
 
     # Test/Development Settings
-    test_mode: bool = Field(
-        default=False,
-        description="Enable test mode (disables real API calls)"
-    )
-    mock_runpod_url: Optional[str] = Field(
-        default=None,
-        description="Mock RunPod URL for testing"
-    )
+    test_mode: bool = Field(default=False, description="Enable test mode (disables real API calls)")
+    mock_runpod_url: Optional[str] = Field(default=None, description="Mock RunPod URL for testing")
 
-    model_config = {
-        "env_file": ".env",
-        "env_file_encoding": "utf-8",
-        "case_sensitive": False
-    }
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "case_sensitive": False}
 
     @property
     def allowed_origins_list(self) -> List[str]:

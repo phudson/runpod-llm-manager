@@ -23,16 +23,19 @@ verbose = "--verbose" in sys.argv
 dry_run = "--dry-run" in sys.argv
 refresh_flag = "--refresh-catalog" in sys.argv
 
+
 def log(msg):
     """Log message if verbose mode is enabled."""
     if verbose:
         print(f"[LOG] {msg}")
+
 
 # Constants
 CONFIG_PATH = os.getenv("CONFIG_PATH", "pod_config.json")
 STATE_PATH = os.getenv("STATE_PATH", "pod_state.json")
 PROXY_PID_FILE = os.getenv("PROXY_PID_FILE", "/tmp/fastapi_proxy.pid")
 LOCKFILE = os.getenv("LOCKFILE", "/tmp/runpod_manage.lock")
+
 
 def graphql_request(query, variables=None):
     """Make a GraphQL request to RunPod API."""
@@ -54,6 +57,7 @@ def graphql_request(query, variables=None):
         print(f"❌ GraphQL request error: {e}")
         sys.exit(1)
 
+
 def get_api_key():
     """Get RunPod API key from environment."""
     key = os.getenv("RUNPOD_API_KEY")
@@ -62,7 +66,9 @@ def get_api_key():
         sys.exit(1)
     return key
 
+
 RUNPOD_API_URL = "https://api.runpod.io/graphql"
+
 
 def validate_environment():
     """Validate required environment variables."""
@@ -70,6 +76,7 @@ def validate_environment():
         print("❌ RUNPOD_API_KEY environment variable not set")
         print("Set it with: export RUNPOD_API_KEY='your-api-key'")
         sys.exit(1)
+
 
 def acquire_lock():
     """Acquire file-based lock to prevent concurrent execution."""
@@ -89,11 +96,13 @@ def acquire_lock():
         f.write(str(os.getpid()))
     log("🔒 Lockfile acquired.")
 
+
 def release_lock():
     """Release the file-based lock."""
     if os.path.exists(LOCKFILE):
         os.remove(LOCKFILE)
         log("🔓 Lockfile released.")
+
 
 def load_config():
     """Load pod configuration from file."""
@@ -101,11 +110,13 @@ def load_config():
     with open(CONFIG_PATH) as f:
         return json.load(f)
 
+
 def save_state(state):
     """Save pod state to file."""
     log(f"Saving {STATE_PATH}...")
     with open(STATE_PATH, "w") as f:
         json.dump(state, f, indent=2)
+
 
 def load_state():
     """Load pod state from file."""
@@ -116,6 +127,7 @@ def load_state():
     with open(STATE_PATH) as f:
         return json.load(f)
 
+
 def pod_is_expired(state, config):
     """Check if pod has expired based on runtime limits."""
     start = datetime.fromisoformat(state["start_time"])
@@ -123,6 +135,7 @@ def pod_is_expired(state, config):
     expired = datetime.now(timezone.utc) > end
     log(f"Pod started at {start}, expires at {end}. Expired: {expired}")
     return expired
+
 
 def shutdown(state):
     """Shutdown active pod and proxy."""
@@ -147,6 +160,7 @@ def shutdown(state):
     else:
         print("ℹ️ No active pod to shut down.")
 
+
 def refresh_catalog():
     """Refresh and display RunPod catalog information."""
     log("Refreshing RunPod catalog...")
@@ -162,12 +176,12 @@ def refresh_catalog():
         "gpu_names": {"A6000": "NVIDIA RTX A6000", "RTX4090": "NVIDIA RTX 4090"},
         "model_store_ids": [
             "deepseek-ai/deepseek-coder-33b-awq",
-            "mistralai/Mistral-7B-Instruct-v0.2"
+            "mistralai/Mistral-7B-Instruct-v0.2",
         ],
         "model_store_names": {
             "deepseek-ai/deepseek-coder-33b-awq": "DeepSeek Coder 33B AWQ",
-            "mistralai/Mistral-7B-Instruct-v0.2": "Mistral 7B Instruct v0.2"
-        }
+            "mistralai/Mistral-7B-Instruct-v0.2": "Mistral 7B Instruct v0.2",
+        },
     }
 
     if verbose:
@@ -182,12 +196,15 @@ def refresh_catalog():
 
     return catalog
 
+
 def validate_config(config, catalog):
     """Validate configuration against catalog."""
     errors = []
 
     if config["template_id"] != catalog["template_id"]:
-        errors.append(f"Invalid template_id: {config['template_id']}\nExpected: {catalog['template_id']} ({catalog['template_name']})")
+        errors.append(
+            f"Invalid template_id: {config['template_id']}\nExpected: {catalog['template_id']} ({catalog['template_name']})"
+        )
 
     if config["gpu_type_id"] not in catalog["gpu_types"]:
         valid = ", ".join([f"{k} ({v})" for k, v in catalog["gpu_names"].items()])
@@ -205,6 +222,7 @@ def validate_config(config, catalog):
     else:
         log("✅ Configuration validated successfully.")
 
+
 def is_proxy_running():
     """Check if the FastAPI proxy is still running."""
     if os.path.exists(PROXY_PID_FILE):
@@ -217,6 +235,7 @@ def is_proxy_running():
             if os.path.exists(PROXY_PID_FILE):
                 os.remove(PROXY_PID_FILE)
     return False
+
 
 def stop_proxy():
     """Stop the running FastAPI proxy with graceful shutdown."""
@@ -252,12 +271,14 @@ def stop_proxy():
             if os.path.exists(PROXY_PID_FILE):
                 os.remove(PROXY_PID_FILE)
 
+
 def update_proxy(ip, port, config):
     """Start the FastAPI proxy with the given pod configuration."""
     log("Starting FastAPI proxy...")
 
     # Validate IP address format
     import ipaddress
+
     try:
         if ip not in ["localhost", "127.0.0.1", "::1"]:
             ipaddress.ip_address(ip)
@@ -327,7 +348,7 @@ def update_proxy(ip, port, config):
             [sys.executable, "proxy_fastapi.py"],
             env=env,
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
         )
 
         with open(PROXY_PID_FILE, "w") as f:
@@ -352,16 +373,19 @@ def update_proxy(ip, port, config):
         print("❌ Failed to start FastAPI proxy.")
         sys.exit(1)
 
+
 def health_check_proxy(proxy_port=8000, timeout=5):
     """Check if the FastAPI proxy is responding."""
     try:
         import httpx
+
         with httpx.Client(timeout=timeout) as client:
             response = client.get(f"http://localhost:{proxy_port}/health")
             return response.status_code == 200
     except Exception:
         log("Proxy health check failed")
         return False
+
 
 def start_pod(config, adjusted_runtime=None):
     """Start a new pod using the service layer."""
@@ -404,7 +428,7 @@ def start_pod(config, adjusted_runtime=None):
                     "pod_id": pod_id,
                     "start_time": start.isoformat(),
                     "end_time": end.isoformat(),
-                    "config_snapshot": config
+                    "config_snapshot": config,
                 }
                 save_state(state)
 
@@ -472,7 +496,9 @@ def main():
                 remaining = max((end - datetime.now(timezone.utc)).total_seconds(), 300)
                 adjusted_config = config.copy()
                 adjusted_config["runtime_seconds"] = int(remaining)
-                log(f"🔁 Pod was terminated. Restarting with adjusted runtime: {int(remaining)} seconds")
+                log(
+                    f"🔁 Pod was terminated. Restarting with adjusted runtime: {int(remaining)} seconds"
+                )
                 state_path = os.getenv("STATE_PATH", "pod_state.json")
                 os.remove(state_path)
                 start_pod(adjusted_config)
@@ -490,6 +516,7 @@ def main():
 
     finally:
         release_lock()
+
 
 if __name__ == "__main__":
     main()

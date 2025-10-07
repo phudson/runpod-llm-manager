@@ -4,6 +4,7 @@ Input validation and data models
 """
 
 from pydantic import BaseModel, Field, field_validator
+
 try:
     from typing import List, Annotated
 except ImportError:
@@ -15,21 +16,23 @@ import re
 
 class ChatMessage(BaseModel):
     """Model for individual chat messages."""
-    role: str = Field(..., pattern=r'^(user|assistant|system)$')
+
+    role: str = Field(..., pattern=r"^(user|assistant|system)$")
     content: str = Field(..., min_length=1, max_length=10000)
 
-    @field_validator('content')
+    @field_validator("content")
     @classmethod
     def sanitize_content(cls, v):
         """Sanitize message content to prevent injection attacks."""
         # Remove potentially harmful patterns
-        v = re.sub(r'<script[^>]*>.*?</script>', '', v, flags=re.IGNORECASE)
-        v = re.sub(r'javascript:', '', v, flags=re.IGNORECASE)
+        v = re.sub(r"<script[^>]*>.*?</script>", "", v, flags=re.IGNORECASE)
+        v = re.sub(r"javascript:", "", v, flags=re.IGNORECASE)
         return v
 
 
 class ChatCompletionRequest(BaseModel):
     """Request model for chat completions."""
+
     model: str = Field(..., min_length=1, max_length=100)
     messages: Annotated[List[ChatMessage], Field(min_length=1, max_length=50)]
     max_tokens: int = Field(10, ge=1, le=4096)
@@ -39,6 +42,7 @@ class ChatCompletionRequest(BaseModel):
 
 class HealthResponse(BaseModel):
     """Response model for health checks."""
+
     status: str
     timestamp: float
     cache_dir: str
@@ -53,6 +57,7 @@ class HealthResponse(BaseModel):
 
 class MetricsResponse(BaseModel):
     """Response model for metrics."""
+
     requests_total: int
     cache_hits: int
     cache_misses: int
@@ -66,6 +71,7 @@ class MetricsResponse(BaseModel):
 
 class DashboardResponse(BaseModel):
     """Response model for dashboard."""
+
     health: HealthResponse
     metrics: MetricsResponse
     system: dict

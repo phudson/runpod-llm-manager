@@ -13,7 +13,13 @@ from .config import AppConfig
 class HTTPClientProtocol(Protocol):
     """Protocol for HTTP client operations."""
 
-    async def post(self, url: str, json: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, str]] = None, **kwargs) -> Dict[str, Any]:
+    async def post(
+        self,
+        url: str,
+        json: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
         """Make POST request and return JSON response."""
         ...
 
@@ -87,6 +93,7 @@ class Dependencies:
 
 # Concrete implementations
 
+
 class HTTPXClient:
     """HTTPX-based HTTP client implementation."""
 
@@ -94,7 +101,13 @@ class HTTPXClient:
         self.timeout = timeout
         self.base_headers = base_headers or {}
 
-    async def post(self, url: str, json: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, str]] = None, **kwargs) -> Dict[str, Any]:
+    async def post(
+        self,
+        url: str,
+        json: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
         request_headers = {**self.base_headers}
         if headers:
             request_headers.update(headers)
@@ -136,24 +149,27 @@ class AIOFilesFileSystem:
     def __init__(self):
         try:
             import aiofiles
+
             self.aiofiles = aiofiles
         except ImportError:
             raise ImportError("aiofiles is required for file system operations")
 
     async def write_file(self, path: str, content: str) -> None:
-        async with self.aiofiles.open(path, 'w') as f:
+        async with self.aiofiles.open(path, "w") as f:
             await f.write(content)
 
     async def read_file(self, path: str) -> str:
-        async with self.aiofiles.open(path, 'r') as f:
+        async with self.aiofiles.open(path, "r") as f:
             return await f.read()
 
     async def file_exists(self, path: str) -> bool:
         import os
+
         return os.path.exists(path)
 
     async def delete_file(self, path: str) -> None:
         import os
+
         if os.path.exists(path):
             os.remove(path)
 
@@ -166,6 +182,7 @@ class InMemoryRateLimiter:
         self.window_seconds = window_seconds
         self._requests: Dict[str, List[float]] = {}
         import time
+
         self._time = time.time
 
     def is_allowed(self, client_ip: str) -> bool:
@@ -178,8 +195,7 @@ class InMemoryRateLimiter:
 
         # Clean old requests
         self._requests[client_ip] = [
-            req_time for req_time in self._requests[client_ip]
-            if req_time > window_start
+            req_time for req_time in self._requests[client_ip] if req_time > window_start
         ]
 
         # Check if under limit
@@ -199,14 +215,14 @@ class InMemoryRateLimiter:
 
         # Clean old requests
         self._requests[client_ip] = [
-            req_time for req_time in self._requests[client_ip]
-            if req_time > window_start
+            req_time for req_time in self._requests[client_ip] if req_time > window_start
         ]
 
         return max(0, self.requests_per_window - len(self._requests[client_ip]))
 
 
 # Factory functions
+
 
 def create_production_dependencies(config: AppConfig) -> Dependencies:
     """Create dependencies for production use."""
@@ -216,9 +232,8 @@ def create_production_dependencies(config: AppConfig) -> Dependencies:
         cache=InMemoryCache(),
         filesystem=AIOFilesFileSystem(),
         rate_limiter=InMemoryRateLimiter(
-            requests_per_window=config.rate_limit_requests,
-            window_seconds=config.rate_limit_window
-        )
+            requests_per_window=config.rate_limit_requests, window_seconds=config.rate_limit_window
+        ),
     )
 
 
@@ -230,22 +245,24 @@ def create_test_dependencies(config: AppConfig) -> Dependencies:
         cache=InMemoryCache(),
         filesystem=AIOFilesFileSystem(),
         rate_limiter=InMemoryRateLimiter(
-            requests_per_window=1000,  # Higher limit for tests
-            window_seconds=60
-        )
+            requests_per_window=1000, window_seconds=60  # Higher limit for tests
+        ),
     )
 
 
 # Global dependency instance (for backward compatibility)
 _default_deps: Optional[Dependencies] = None
 
+
 def get_default_dependencies() -> Dependencies:
     """Get default dependencies (for backward compatibility)."""
     global _default_deps
     if _default_deps is None:
         from .config import config
+
         _default_deps = create_production_dependencies(config)
     return _default_deps
+
 
 def set_default_dependencies(deps: Dependencies) -> None:
     """Set default dependencies (for testing)."""
