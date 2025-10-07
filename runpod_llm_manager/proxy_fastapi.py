@@ -8,14 +8,14 @@ import time
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI, Request, HTTPException, Depends
-from fastapi.responses import JSONResponse
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from .config import config
 from .dependencies import Dependencies, get_default_dependencies
-from .services import LLMService, HealthService, MetricsService
 from .proxy_fastapi_models import ChatCompletionRequest
+from .services import HealthService, LLMService, MetricsService
 
 # Setup logging
 logging.basicConfig(

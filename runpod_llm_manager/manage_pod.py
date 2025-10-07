@@ -4,15 +4,16 @@ RunPod LLM Manager - Service Layer Architecture
 Modern CLI tool for managing RunPod pods with Model Store integration
 """
 
-import os
 import json
-import sys
-import time
+import os
+import re
 import signal
 import subprocess
-import re
-import requests
+import sys
+import time
 from datetime import datetime, timedelta, timezone
+
+import requests
 
 from .config import config
 from .dependencies import get_default_dependencies
@@ -316,7 +317,9 @@ def update_proxy(ip, port, config):
         sys.exit(1)
 
     try:
-        import fastapi, httpx, uvicorn
+        import fastapi
+        import httpx
+        import uvicorn
     except ImportError as e:
         print(f"❌ Missing required dependency: {e}")
         print("Install with: pip install fastapi httpx uvicorn")

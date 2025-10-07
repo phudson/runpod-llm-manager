@@ -3,10 +3,11 @@ Configuration management for RunPod LLM Manager
 Uses Pydantic BaseSettings for type-safe configuration with environment variable support
 """
 
+import os
+from typing import List, Optional
+
 from pydantic import Field
 from pydantic_settings import BaseSettings
-from typing import Optional, List
-import os
 
 
 class AppConfig(BaseSettings):

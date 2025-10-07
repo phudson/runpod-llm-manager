@@ -4,12 +4,12 @@ Security utilities for RunPod LLM Manager
 Provides SBOM generation, dependency scanning, and security compliance tools
 """
 
-import os
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 
 def generate_sbom(output_file: str = "sbom.json") -> bool:

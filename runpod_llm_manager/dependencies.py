@@ -3,10 +3,13 @@ Dependency injection framework for RunPod LLM Manager
 Provides protocols and dependency containers for testable architecture
 """
 
-# ABC imports removed - not used in this file
-from typing import Protocol, Optional, Dict, Any, List
 from dataclasses import dataclass
+
+# ABC imports removed - not used in this file
+from typing import Any, Dict, List, Optional, Protocol
+
 import httpx
+
 from .config import AppConfig
 
 

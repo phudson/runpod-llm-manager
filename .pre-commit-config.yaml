@@ -1,4 +1,11 @@
 repos:
+  # isort - Python import sorter
+  - repo: https://github.com/pycqa/isort
+    rev: 6.1.0
+    hooks:
+      - id: isort
+        args: ["--profile", "black", "--check-only", "--diff"]
+
   # Black - Python code formatter (essential for consistent formatting)
   - repo: https://github.com/psf/black
     rev: 25.9.0
