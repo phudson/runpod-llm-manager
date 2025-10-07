@@ -185,8 +185,9 @@ class InMemoryRateLimiter:
         self.window_seconds = window_seconds
         self._requests: Dict[str, List[float]] = {}
         import time
+        from typing import Callable
 
-        self._time = time.time
+        self._time: Callable[[], float] = time.time
 
     def is_allowed(self, client_ip: str) -> bool:
         """Check if request is allowed under rate limit."""

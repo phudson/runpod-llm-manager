@@ -4,6 +4,7 @@ RunPod LLM Manager - Service Layer Architecture
 Modern CLI tool for managing RunPod pods with Model Store integration
 """
 
+import asyncio
 import json
 import os
 import re
@@ -390,7 +391,7 @@ def health_check_proxy(proxy_port=8000, timeout=5):
         return False
 
 
-def start_pod(config, adjusted_runtime=None):
+async def start_pod_async(config, adjusted_runtime=None):
     """Start a new pod using the service layer."""
     if dry_run:
         print("🧪 Dry-run: Simulating pod start.")
@@ -401,19 +402,19 @@ def start_pod(config, adjusted_runtime=None):
     pod_service = PodManagementService(deps)
 
     try:
-        pod_id = pod_service.create_pod(config)
+        pod_id = await pod_service.create_pod(config)
         log(f"Pod created: {pod_id}")
         print("⏳ Waiting for pod to become ready...")
 
         # Wait for pod to be ready
         initial_wait = config.get("initial_wait_seconds", 10)
-        time.sleep(initial_wait)
+        await asyncio.sleep(initial_wait)
 
         max_attempts = config.get("max_startup_attempts", 20)
         poll_interval = config.get("poll_interval_seconds", 5)
 
         for attempt in range(max_attempts):
-            pod = pod_service.get_pod_status(pod_id)
+            pod = await pod_service.get_pod_status(pod_id)
             if pod["status"] == "RUNNING" and pod.get("ip"):
                 port = pod["ports"][0]["publicPort"]
                 update_proxy(pod["ip"], port, config)
@@ -439,7 +440,7 @@ def start_pod(config, adjusted_runtime=None):
                 return
 
             log(f"Status: {pod['status']}. Waiting... (attempt {attempt + 1}/{max_attempts})")
-            time.sleep(poll_interval)
+            await asyncio.sleep(poll_interval)
 
         print("❌ Pod did not become ready in time.")
         shutdown({"pod_id": pod_id})
@@ -449,6 +450,11 @@ def start_pod(config, adjusted_runtime=None):
         log(f"Failed to start pod: {e}")
         print(f"❌ Failed to start pod: {e}")
         sys.exit(1)
+
+
+def start_pod(config, adjusted_runtime=None):
+    """Synchronous wrapper for start_pod_async."""
+    asyncio.run(start_pod_async(config, adjusted_runtime))
 
 
 def main():

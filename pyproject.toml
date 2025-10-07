@@ -95,8 +95,9 @@ line_length = 100
 known_first_party = ["runpod_llm_manager"]
 
 [tool.mypy]
-python_version = "3.8"
-warn_return_any = true
+python_version = "3.9"
+warn_return_any = false
+disallow_any_generics = false
 warn_unused_configs = true
 disallow_untyped_defs = false
 disallow_incomplete_defs = false

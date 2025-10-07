@@ -1,17 +1,17 @@
 repos:
-  # isort - Python import sorter
-  - repo: https://github.com/pycqa/isort
-    rev: 6.1.0
-    hooks:
-      - id: isort
-        args: ["--profile", "black", "--check-only", "--diff"]
-
   # Black - Python code formatter (essential for consistent formatting)
   - repo: https://github.com/psf/black
     rev: 25.9.0
     hooks:
       - id: black
         language_version: python3
+
+  # isort - Python import sorter
+  - repo: https://github.com/pycqa/isort
+    rev: 6.1.0
+    hooks:
+      - id: isort
+        args: ["--profile", "black", "--check-only", "--diff"]
 
   # Basic pre-commit hooks for file quality
   - repo: https://github.com/pre-commit/pre-commit-hooks
