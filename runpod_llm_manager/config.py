@@ -5,7 +5,7 @@ Uses Pydantic BaseSettings for type-safe configuration with environment variable
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import Optional, List
 import os
 
 
@@ -103,7 +103,7 @@ class AppConfig(BaseSettings):
     }
 
     @property
-    def allowed_origins_list(self) -> list[str]:
+    def allowed_origins_list(self) -> List[str]:
         """Get allowed origins as a list."""
         return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
 
