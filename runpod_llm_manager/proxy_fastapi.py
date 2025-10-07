@@ -6,6 +6,7 @@ Modern service-layer architecture with dependency injection and comprehensive se
 import logging
 import time
 from contextlib import asynccontextmanager
+from typing import Optional
 
 from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
@@ -24,9 +25,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Global services (initialized on startup)
-llm_service: LLMService
-health_service: HealthService
-metrics_service: MetricsService
+llm_service: Optional[LLMService] = None
+health_service: Optional[HealthService] = None
+metrics_service: Optional[MetricsService] = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -125,17 +126,24 @@ def log_security_event(event_type: str, details: dict, level="WARNING"):
 @app.get("/health")
 async def health_check(request: Request):
     """Health check endpoint for monitoring proxy status."""
+    if health_service is None:
+        return JSONResponse(status_code=503, content={"error": "Service not initialized"})
     client_ip = request.client.host if request.client else "unknown"
     return await health_service.get_health_status(client_ip)
 
 @app.get("/metrics")
 async def get_metrics():
     """Get performance metrics."""
+    if metrics_service is None:
+        return JSONResponse(status_code=503, content={"error": "Service not initialized"})
     return await metrics_service.get_metrics()
 
 @app.get("/dashboard")
 async def dashboard(request: Request):
     """Comprehensive dashboard with health, metrics, and system info."""
+    if health_service is None or metrics_service is None:
+        return JSONResponse(status_code=503, content={"error": "Services not initialized"})
+
     client_ip = request.client.host if request.client else "unknown"
 
     # Get health info
@@ -175,6 +183,9 @@ async def dashboard(request: Request):
 @app.post("/v1/chat/completions")
 async def chat_completions(request: ChatCompletionRequest):
     """Process chat completion requests."""
+    if llm_service is None:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
     try:
         return await llm_service.process_completion_request(request)
     except Exception as e:
