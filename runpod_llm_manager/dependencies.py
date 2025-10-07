@@ -3,7 +3,7 @@ Dependency injection framework for RunPod LLM Manager
 Provides protocols and dependency containers for testable architecture
 """
 
-from abc import ABC, abstractmethod
+# ABC imports removed - not used in this file
 from typing import Protocol, Optional, Dict, Any, List
 from dataclasses import dataclass
 import httpx
@@ -232,7 +232,8 @@ def create_production_dependencies(config: AppConfig) -> Dependencies:
         cache=InMemoryCache(),
         filesystem=AIOFilesFileSystem(),
         rate_limiter=InMemoryRateLimiter(
-            requests_per_window=config.rate_limit_requests, window_seconds=config.rate_limit_window
+            requests_per_window=config.rate_limit_requests,
+            window_seconds=config.rate_limit_window,
         ),
     )
 

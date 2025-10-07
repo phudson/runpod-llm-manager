@@ -14,7 +14,8 @@ class AppConfig(BaseSettings):
 
     # API Settings
     runpod_endpoint: str = Field(
-        default="http://localhost:8000/v1/chat/completions", description="RunPod API endpoint URL"
+        default="http://localhost:8000/v1/chat/completions",
+        description="RunPod API endpoint URL",
     )
     runpod_api_key: Optional[str] = Field(
         default=None, description="RunPod API key (required for production)"
@@ -61,7 +62,11 @@ class AppConfig(BaseSettings):
     test_mode: bool = Field(default=False, description="Enable test mode (disables real API calls)")
     mock_runpod_url: Optional[str] = Field(default=None, description="Mock RunPod URL for testing")
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "case_sensitive": False}
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": False,
+    }
 
     @property
     def allowed_origins_list(self) -> List[str]:

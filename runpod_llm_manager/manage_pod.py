@@ -479,7 +479,11 @@ def main():
             try:
                 # For CLI, we'll use synchronous approach
                 # In a full implementation, this would be async
-                pod = {"status": "RUNNING", "ip": "127.0.0.1", "ports": [{"publicPort": 8000}]}
+                pod = {
+                    "status": "RUNNING",
+                    "ip": "127.0.0.1",
+                    "ports": [{"publicPort": 8000}],
+                }
             except Exception as e:
                 log(f"⚠️ Error querying pod status: {e}")
                 print("🌐 Network issue detected. Skipping restart.")

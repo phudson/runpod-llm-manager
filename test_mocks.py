@@ -224,7 +224,12 @@ def create_test_completion_request(
     if messages is None:
         messages = [{"role": "user", "content": "Hello, world!"}]
 
-    return {"model": model, "messages": messages, "max_tokens": max_tokens, "temperature": 0.7}
+    return {
+        "model": model,
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "temperature": 0.7,
+    }
 
 
 def create_test_pod_config(

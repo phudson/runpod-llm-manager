@@ -203,7 +203,9 @@ def create_llm_service(deps: Optional[Dependencies] = None) -> LLMService:
     return LLMService(deps)
 
 
-def create_pod_management_service(deps: Optional[Dependencies] = None) -> PodManagementService:
+def create_pod_management_service(
+    deps: Optional[Dependencies] = None,
+) -> PodManagementService:
     """Create pod management service instance."""
     if deps is None:
         from .dependencies import get_default_dependencies
