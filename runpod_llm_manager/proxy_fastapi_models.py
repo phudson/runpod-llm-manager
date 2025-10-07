@@ -3,16 +3,10 @@ Pydantic models for RunPod LLM Manager FastAPI proxy
 Input validation and data models
 """
 
-from pydantic import BaseModel, Field, field_validator
-
-try:
-    from typing import Annotated, List
-except ImportError:
-    # Python 3.8 compatibility
-    from typing import List
-    from typing_extensions import Annotated
-
 import re
+from typing import Annotated, List
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class ChatMessage(BaseModel):

@@ -13,6 +13,7 @@ import subprocess
 import sys
 import time
 from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List
 
 import requests
 
@@ -171,7 +172,7 @@ def refresh_catalog():
 
     # This would need to be implemented in the service
     # For now, return a placeholder
-    catalog = {
+    catalog: Dict[str, Any] = {
         "template_id": "vllm",
         "template_name": "vLLM",
         "gpu_types": ["A6000", "RTX4090"],
@@ -192,15 +193,11 @@ def refresh_catalog():
         print("- GPU Types:")
         for gid in catalog["gpu_types"]:
             gpu_names = catalog["gpu_names"]
-            print(
-                f"  • {gid} ({gpu_names.get(gid, 'Unknown') if hasattr(gpu_names, 'get') else 'Unknown'})"
-            )
+            print(f"  • {gid} ({gpu_names.get(gid, 'Unknown')})")
         print("- Model Store Models:")
         for mid in catalog["model_store_ids"]:
             model_names = catalog["model_store_names"]
-            print(
-                f"  • {mid} ({model_names.get(mid, 'Unknown') if hasattr(model_names, 'get') else 'Unknown'})"
-            )
+            print(f"  • {mid} ({model_names.get(mid, 'Unknown')})")
 
     return catalog
 
