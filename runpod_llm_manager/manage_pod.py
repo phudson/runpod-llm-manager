@@ -190,14 +190,14 @@ def refresh_catalog():
         print("📦 RunPod Catalog:")
         print(f"- Template ID: {catalog['template_id']} ({catalog['template_name']})")
         print("- GPU Types:")
-        for gid in catalog["gpu_types"]:  # type: ignore[index]
-            gpu_names = catalog["gpu_names"]  # type: ignore[attr-defined]
+        for gid in catalog["gpu_types"]:
+            gpu_names = catalog["gpu_names"]
             print(
                 f"  • {gid} ({gpu_names.get(gid, 'Unknown') if hasattr(gpu_names, 'get') else 'Unknown'})"
             )
         print("- Model Store Models:")
-        for mid in catalog["model_store_ids"]:  # type: ignore[index]
-            model_names = catalog["model_store_names"]  # type: ignore[attr-defined]
+        for mid in catalog["model_store_ids"]:
+            model_names = catalog["model_store_names"]
             print(
                 f"  • {mid} ({model_names.get(mid, 'Unknown') if hasattr(model_names, 'get') else 'Unknown'})"
             )
