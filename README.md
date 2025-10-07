@@ -61,7 +61,7 @@ This advanced system automates the full lifecycle of GPU-backed LLM pods on RunP
 2. **Install Python dependencies:**
      ```bash
      # Core dependencies (required)
-     pip install fastapi httpx uvicorn pydantic aiofiles requests
+     pip install fastapi httpx uvicorn pydantic aiofiles
 
      # Security and compliance tools (recommended)
      pip install cyclonedx-bom safety pip-licenses

@@ -1,0 +1,160 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}-
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run syntax checks
+        run: |
+          python -m py_compile proxy_fastapi.py
+          python -m py_compile manage_pod.py
+          python -m py_compile config.py
+          python -m py_compile dependencies.py
+          python -m py_compile services.py
+          python -m py_compile security_utils.py
+
+      - name: Run tests
+        run: |
+          pytest tests/ -v --tb=short --asyncio-mode=auto \
+            --cov=proxy_fastapi --cov=manage_pod --cov=config --cov=dependencies \
+            --cov=services --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install security tools
+        run: |
+          pip install safety cyclonedx-bom pip-licenses
+
+      - name: Run security assessment
+        run: python security_utils.py report
+
+      - name: Check for high-severity vulnerabilities
+        run: |
+          if python security_utils.py scan | grep -q "vulnerabilities_found.*[1-9]"; then
+            echo "❌ High-severity vulnerabilities found"
+            python security_utils.py scan
+            exit 1
+          else
+            echo "✅ No high-severity vulnerabilities found"
+          fi
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install linting tools
+        run: |
+          pip install flake8 black isort mypy
+
+      - name: Run flake8
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Run black check
+        run: black --check --diff .
+
+      - name: Run isort check
+        run: isort --check-only --diff .
+
+      - name: Run mypy
+        run: |
+          mypy proxy_fastapi.py manage_pod.py config.py dependencies.py services.py \
+            --ignore-missing-imports --no-strict-optional
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [test, security, lint]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build package
+        run: |
+          python -m pip install build
+          python -m build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist/
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'release:')
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
