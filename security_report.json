@@ -1,0 +1,616 @@
+{
+  "timestamp": "2025-10-07T13:51:59.418171+00:00",
+  "project": "runpod-llm-manager",
+  "security_assessment": {
+    "sbom_generated": true,
+    "dependency_scan": {
+      "timestamp": "2025-10-07T13:52:01.475479+00:00",
+      "tool": "safety",
+      "vulnerabilities_found": 0,
+      "vulnerabilities": [],
+      "status": "clean"
+    },
+    "license_check": {
+      "timestamp": "2025-10-07T13:52:04.020180+00:00",
+      "tool": "pip-licenses",
+      "licenses": [
+        {
+          "License": "BSD License",
+          "Name": "Authlib",
+          "Version": "1.6.5"
+        },
+        {
+          "License": "BSD License",
+          "Name": "Jinja2",
+          "Version": "3.1.6"
+        },
+        {
+          "License": "UNKNOWN",
+          "Name": "MarkupSafe",
+          "Version": "3.0.3"
+        },
+        {
+          "License": "MIT License",
+          "Name": "PyJWT",
+          "Version": "2.10.1"
+        },
+        {
+          "License": "BSD",
+          "Name": "PySocks",
+          "Version": "1.7.1"
+        },
+        {
+          "License": "BSD License",
+          "Name": "Pygments",
+          "Version": "2.19.1"
+        },
+        {
+          "License": "BSD License",
+          "Name": "SecretStorage",
+          "Version": "3.3.1"
+        },
+        {
+          "License": "Apache Software License",
+          "Name": "aiofiles",
+          "Version": "24.1.0"
+        },
+        {
+          "License": "BSD",
+          "Name": "anaconda-anon-usage",
+          "Version": "0.7.2"
+        },
+        {
+          "License": "BSD-3-Clause",
+          "Name": "anaconda-auth",
+          "Version": "0.8.6"
+        },
+        {
+          "License": "BSD-3-Clause",
+          "Name": "anaconda-cli-base",
+          "Version": "0.5.2"
+        },
+        {
+          "License": "MIT License",
+          "Name": "annotated-types",
+          "Version": "0.6.0"
+        },
+        {
+          "License": "UNKNOWN",
+          "Name": "anyio",
+          "Version": "4.10.0"
+        },
+        {
+          "License": "Other/Proprietary License",
+          "Name": "archspec",
+          "Version": "0.2.3"
+        },
+        {
+          "License": "Apache Software License",
+          "Name": "arrow",
+          "Version": "1.3.0"
+        },
+        {
+          "License": "UNKNOWN",
+          "Name": "attrs",
+          "Version": "25.4.0"
+        },
+        {
+          "License": "BSD License",
+          "Name": "boltons",
+          "Version": "25.0.0"
+        },
+        {
+          "License": "BSD-2-Clause",
+          "Name": "boolean.py",
+          "Version": "5.0"
+        },
+        {
+          "License": "MIT",
+          "Name": "brotlicffi",
+          "Version": "1.0.9.2"
+        },
+        {
+          "License": "Mozilla Public License 2.0 (MPL 2.0)",
+          "Name": "certifi",
+          "Version": "2025.8.3"
+        },
+        {
+          "License": "MIT License",
+          "Name": "cffi",
+          "Version": "1.17.1"
+        },
+        {
+          "License": "GNU Lesser General Public License v2 or later (LGPLv2+)",
+          "Name": "chardet",
+          "Version": "5.2.0"
+        },
+        {
+          "License": "MIT License",
+          "Name": "charset-normalizer",
+          "Version": "3.3.2"
+        },
+        {
+          "License": "UNKNOWN",
+          "Name": "click",
+          "Version": "8.2.1"
+        },
+        {
+          "License": "BSD License",
+          "Name": "colorama",
+          "Version": "0.4.6"
+        },
+        {
+          "License": "BSD License",
+          "Name": "conda",
+          "Version": "25.7.0"
+        },
+        {
+          "License": "BSD 3-Clause License\n\nCopyright (c) 2024, Anaconda, Inc.\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n    * Redistributions of source code must retain the above copyright\n      notice, this list of conditions and the following disclaimer.\n    * Redistributions in binary form must reproduce the above copyright\n      notice, this list of conditions and the following disclaimer in the\n      documentation and/or other materials provided with the distribution.\n    * Neither the name of the copyright holder nor the names of its\n      contributors may be used to endorse or promote products\n      derived from this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY\nDIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND\nON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.",
+          "Name": "conda-anaconda-telemetry",
+          "Version": "0.3.0"
+        },
+        {
+          "License": "BSD 3-Clause License\n\nCopyright (c) 2024, Anaconda, Inc.\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n    * Redistributions of source code must retain the above copyright\n      notice, this list of conditions and the following disclaimer.\n    * Redistributions in binary form must reproduce the above copyright\n      notice, this list of conditions and the following disclaimer in the\n      documentation and/or other materials provided with the distribution.\n    * Neither the name of the copyright holder nor the names of its\n      contributors may be used to endorse or promote products\n      derived from this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY\nDIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND\nON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.",
+          "Name": "conda-anaconda-tos",
+          "Version": "0.2.2"
+        },
+        {
+          "License": "BSD License",
+          "Name": "conda-content-trust",
+          "Version": "0.2.0"
+        },
+        {
+          "License": "BSD License",
+          "Name": "conda-libmamba-solver",
+          "Version": "25.4.0"
+        },
+        {
+          "License": "UNKNOWN",
+          "Name": "conda-package-handling",
+          "Version": "2.4.0"
+        },
+        {
+          "License": "BSD License",
+          "Name": "conda_package_streaming",
+          "Version": "0.12.0"
+        },
+        {
+          "License": "Apache-2.0 OR BSD-3-Clause",
+          "Name": "cryptography",
+          "Version": "45.0.5"
+        },
+        {
+          "License": "Apache Software License",
+          "Name": "cyclonedx-bom",
+          "Version": "7.1.0"
+        },
+        {
+          "License": "Apache Software License",
+          "Name": "cyclonedx-python-lib",
+          "Version": "11.1.0"
+        },
+        {
+          "License": "Python Software Foundation License",
+          "Name": "defusedxml",
+          "Version": "0.7.1"
+        },
+        {
+          "License": "Apache Software License",
+          "Name": "distro",
+          "Version": "1.9.0"
+        },
+        {
+          "License": "MIT License",
+          "Name": "dparse",
+          "Version": "0.6.4"
+        },
+        {
+          "License": "MIT License",
+          "Name": "fastapi",
+          "Version": "0.116.1"
+        },
+        {
+          "License": "The Unlicense (Unlicense)",
+          "Name": "filelock",
+          "Version": "3.19.1"
+        },
+        {
+          "License": "Mozilla Public License 2.0 (MPL 2.0)",
+          "Name": "fqdn",
+          "Version": "1.5.1"
+        },
+        {
+          "License": "GNU Lesser General Public License v3 (LGPLv3)",
+          "Name": "frozendict",
+          "Version": "2.4.2"
+        },
+        {
+          "License": "MIT License",
+          "Name": "h11",
+          "Version": "0.16.0"
+        },
+        {
+          "License": "BSD License",
+          "Name": "httpcore",
+          "Version": "1.0.9"
+        },
+        {
+          "License": "BSD License",
+          "Name": "httpx",
+          "Version": "0.28.1"
+        },
+        {
+          "License": "BSD License",
+          "Name": "idna",
+          "Version": "3.7"
+        },
+        {
+          "License": "ISC License (ISCL)",
+          "Name": "isoduration",
+          "Version": "20.11.0"
+        },
+        {
+          "License": "MIT License",
+          "Name": "jaraco.classes",
+          "Version": "3.4.0"
+        },
+        {
+          "License": "MIT License",
+          "Name": "jaraco.context",
+          "Version": "0.0.0"
+        },
+        {
+          "License": "MIT License",
+          "Name": "jaraco.functools",
+          "Version": "4.1.0"
+        },
+        {
+          "License": "MIT License",
+          "Name": "jeepney",
+          "Version": "0.7.1"
+        },
+        {
+          "License": "BSD License",
+          "Name": "joblib",
+          "Version": "1.5.2"
+        },
+        {
+          "License": "BSD License",
+          "Name": "jsonpatch",
+          "Version": "1.33"
+        },
+        {
+          "License": "BSD License",
+          "Name": "jsonpointer",
+          "Version": "3.0.0"
+        },
+        {
+          "License": "UNKNOWN",
+          "Name": "jsonschema",
+          "Version": "4.25.1"
+        },
+        {
+          "License": "UNKNOWN",
+          "Name": "jsonschema-specifications",
+          "Version": "2025.9.1"
+        },
+        {
+          "License": "MIT License",
+          "Name": "keyring",
+          "Version": "25.6.0"
+        },
+        {
+          "License": "MIT License",
+          "Name": "lark",
+          "Version": "1.3.0"
+        },
+        {
+          "License": "BSD-3-Clause",
+          "Name": "libmambapy",
+          "Version": "2.0.5"
+        },
+        {
+          "License": "Apache-2.0",
+          "Name": "license-expression",
+          "Version": "30.4.4"
+        },
+        {
+          "License": "BSD-3-Clause",
+          "Name": "lxml",
+          "Version": "6.0.2"
+        },
+        {
+          "License": "MIT License",
+          "Name": "markdown-it-py",
+          "Version": "2.2.0"
+        },
+        {
+          "License": "MIT License",
+          "Name": "marshmallow",
+          "Version": "4.0.1"
+        },
+        {
+          "License": "MIT License",
+          "Name": "mdurl",
+          "Version": "0.1.0"
+        },
+        {
+          "License": "(c) 2016 Continuum Analytics, Inc. / http://continuum.io\nAll Rights Reserved\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n    * Redistributions of source code must retain the above copyright\n      notice, this list of conditions and the following disclaimer.\n    * Redistributions in binary form must reproduce the above copyright\n      notice, this list of conditions and the following disclaimer in the\n      documentation and/or other materials provided with the distribution.\n    * Neither the name of Continuum Analytics, Inc. nor the\n      names of its contributors may be used to endorse or promote products\n      derived from this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL CONTINUUM ANALYTICS BE LIABLE FOR ANY\nDIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND\nON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+          "Name": "menuinst",
+          "Version": "2.3.1"
+        },
+        {
+          "License": "MIT License",
+          "Name": "more-itertools",
+          "Version": "10.3.0"
+        },
+        {
+          "License": "Apache Software License",
+          "Name": "nltk",
+          "Version": "3.9.2"
+        },
+        {
+          "License": "MIT License",
+          "Name": "packageurl-python",
+          "Version": "0.17.5"
+        },
+        {
+          "License": "Apache Software License; BSD License",
+          "Name": "packaging",
+          "Version": "25.0"
+        },
+        {
+          "License": "MIT",
+          "Name": "pip-requirements-parser",
+          "Version": "32.0.1"
+        },
+        {
+          "License": "MIT License",
+          "Name": "pkce",
+          "Version": "1.0.3"
+        },
+        {
+          "License": "MIT License",
+          "Name": "platformdirs",
+          "Version": "4.3.7"
+        },
+        {
+          "License": "MIT License",
+          "Name": "pluggy",
+          "Version": "1.5.0"
+        },
+        {
+          "License": "BSD-3-Clause",
+          "Name": "psutil",
+          "Version": "7.1.0"
+        },
+        {
+          "License": "Apache Software License",
+          "Name": "py-serializable",
+          "Version": "2.1.0"
+        },
+        {
+          "License": "MIT",
+          "Name": "pycosat",
+          "Version": "0.6.6"
+        },
+        {
+          "License": "BSD License",
+          "Name": "pycparser",
+          "Version": "2.21"
+        },
+        {
+          "License": "MIT License",
+          "Name": "pydantic",
+          "Version": "2.11.7"
+        },
+        {
+          "License": "MIT License",
+          "Name": "pydantic-settings",
+          "Version": "2.6.1"
+        },
+        {
+          "License": "MIT License",
+          "Name": "pydantic_core",
+          "Version": "2.33.2"
+        },
+        {
+          "License": "UNKNOWN",
+          "Name": "pyparsing",
+          "Version": "3.2.5"
+        },
+        {
+          "License": "Apache Software License; BSD License",
+          "Name": "python-dateutil",
+          "Version": "2.9.0.post0"
+        },
+        {
+          "License": "BSD License",
+          "Name": "python-dotenv",
+          "Version": "1.1.0"
+        },
+        {
+          "License": "MIT License",
+          "Name": "readchar",
+          "Version": "4.0.5"
+        },
+        {
+          "License": "UNKNOWN",
+          "Name": "referencing",
+          "Version": "0.36.2"
+        },
+        {
+          "License": "UNKNOWN",
+          "Name": "regex",
+          "Version": "2025.9.18"
+        },
+        {
+          "License": "Apache Software License",
+          "Name": "requests",
+          "Version": "2.32.4"
+        },
+        {
+          "License": "MIT License",
+          "Name": "rfc3339-validator",
+          "Version": "0.1.4"
+        },
+        {
+          "License": "MIT License",
+          "Name": "rfc3986-validator",
+          "Version": "0.1.1"
+        },
+        {
+          "License": "Apache Software License",
+          "Name": "rfc3987-syntax",
+          "Version": "1.1.0"
+        },
+        {
+          "License": "MIT License",
+          "Name": "rich",
+          "Version": "13.9.4"
+        },
+        {
+          "License": "UNKNOWN",
+          "Name": "rpds-py",
+          "Version": "0.27.1"
+        },
+        {
+          "License": "MIT License",
+          "Name": "ruamel.yaml",
+          "Version": "0.18.10"
+        },
+        {
+          "License": "MIT License",
+          "Name": "ruamel.yaml.clib",
+          "Version": "0.2.12"
+        },
+        {
+          "License": "MIT License",
+          "Name": "safety",
+          "Version": "3.6.2"
+        },
+        {
+          "License": "MIT License",
+          "Name": "safety-schemas",
+          "Version": "0.0.16"
+        },
+        {
+          "License": "BSD License",
+          "Name": "semver",
+          "Version": "3.0.2"
+        },
+        {
+          "License": "ISC License (ISCL)",
+          "Name": "shellingham",
+          "Version": "1.5.0"
+        },
+        {
+          "License": "MIT License",
+          "Name": "six",
+          "Version": "1.17.0"
+        },
+        {
+          "License": "Apache Software License; MIT License",
+          "Name": "sniffio",
+          "Version": "1.3.1"
+        },
+        {
+          "License": "Apache Software License",
+          "Name": "sortedcontainers",
+          "Version": "2.4.0"
+        },
+        {
+          "License": "BSD License",
+          "Name": "starlette",
+          "Version": "0.47.3"
+        },
+        {
+          "License": "Apache Software License",
+          "Name": "tenacity",
+          "Version": "9.1.2"
+        },
+        {
+          "License": "MIT License",
+          "Name": "tomlkit",
+          "Version": "0.13.3"
+        },
+        {
+          "License": "MIT License; Mozilla Public License 2.0 (MPL 2.0)",
+          "Name": "tqdm",
+          "Version": "4.67.1"
+        },
+        {
+          "License": "MIT License",
+          "Name": "truststore",
+          "Version": "0.10.1"
+        },
+        {
+          "License": "MIT License",
+          "Name": "typer",
+          "Version": "0.19.2"
+        },
+        {
+          "License": "UNKNOWN",
+          "Name": "types-python-dateutil",
+          "Version": "2.9.0.20250822"
+        },
+        {
+          "License": "MIT License",
+          "Name": "typing-inspection",
+          "Version": "0.4.0"
+        },
+        {
+          "License": "Python Software Foundation License",
+          "Name": "typing_extensions",
+          "Version": "4.12.2"
+        },
+        {
+          "License": "MIT License",
+          "Name": "uri-template",
+          "Version": "1.3.0"
+        },
+        {
+          "License": "UNKNOWN",
+          "Name": "urllib3",
+          "Version": "2.5.0"
+        },
+        {
+          "License": "BSD License",
+          "Name": "uvicorn",
+          "Version": "0.35.0"
+        },
+        {
+          "License": "BSD License",
+          "Name": "webcolors",
+          "Version": "24.11.1"
+        },
+        {
+          "License": "BSD License",
+          "Name": "zstandard",
+          "Version": "0.23.0"
+        }
+      ],
+      "status": "success",
+      "copyleft_packages": [
+        "chardet",
+        "frozendict"
+      ]
+    }
+  },
+  "implemented_security_features": [
+    "Security headers (XSS, CSRF, Content-Type protection)",
+    "Rate limiting (60 requests/minute per IP)",
+    "Input validation and sanitization",
+    "HTTPS enforcement when enabled",
+    "CORS protection",
+    "Security event logging",
+    "Request size limits",
+    "Content length validation"
+  ],
+  "compliance_notes": [
+    "EU Cyber Resilience Act: Individual developer exemption likely applies",
+    "Non-commercial software: Reduced regulatory requirements",
+    "GDPR: Minimal PII handling, no persistent user data storage",
+    "Open source dependencies: All mainstream with active maintenance"
+  ]
+}

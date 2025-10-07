@@ -1,0 +1,56 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="podGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+    <!-- Background circle -->
+  <circle cx="100" cy="100" r="75" fill="url(#podGradient)" stroke="#E5E7EB" stroke-width="2"/>
+
+  <!-- Main pod container -->
+  <rect x="60" y="55" width="80" height="60" rx="8" ry="8" fill="white" stroke="#374151" stroke-width="2" opacity="0.9"/>
+
+  <!-- Pod layers (representing container layers) -->
+  <rect x="65" y="60" width="70" height="8" rx="2" ry="2" fill="url(#accentGradient)" opacity="0.8"/>
+  <rect x="65" y="72" width="70" height="8" rx="2" ry="2" fill="url(#accentGradient)" opacity="0.6"/>
+  <rect x="65" y="84" width="70" height="8" rx="2" ry="2" fill="url(#accentGradient)" opacity="0.4"/>
+
+  <!-- Connection dots (representing networking) -->
+  <circle cx="50" cy="70" r="3" fill="#10B981"/>
+  <circle cx="50" cy="85" r="3" fill="#10B981"/>
+  <circle cx="50" cy="100" r="3" fill="#10B981"/>
+
+  <!-- Connection lines -->
+  <line x1="53" y1="70" x2="60" y2="70" stroke="#10B981" stroke-width="2"/>
+  <line x1="53" y1="85" x2="60" y2="85" stroke="#10B981" stroke-width="2"/>
+  <line x1="53" y1="100" x2="60" y2="100" stroke="#10B981" stroke-width="2"/>
+
+  <!-- Neural network nodes for LLM representation -->
+  <circle cx="75" cy="75" r="3" fill="#F59E0B" opacity="0.8"/>
+  <circle cx="85" cy="85" r="3" fill="#F59E0B" opacity="0.8"/>
+  <circle cx="95" cy="95" r="3" fill="#F59E0B" opacity="0.8"/>
+  <circle cx="105" cy="85" r="3" fill="#F59E0B" opacity="0.8"/>
+  <circle cx="115" cy="75" r="3" fill="#F59E0B" opacity="0.8"/>
+
+  <!-- Neural network connections -->
+  <line x1="78" y1="75" x2="82" y2="85" stroke="#F59E0B" stroke-width="1.5" opacity="0.6"/>
+  <line x1="88" y1="85" x2="92" y2="95" stroke="#F59E0B" stroke-width="1.5" opacity="0.6"/>
+  <line x1="98" y1="95" x2="102" y2="85" stroke="#F59E0B" stroke-width="1.5" opacity="0.6"/>
+  <line x1="108" y1="85" x2="112" y2="75" stroke="#F59E0B" stroke-width="1.5" opacity="0.6"/>
+  <line x1="85" y1="82" x2="95" y2="88" stroke="#F59E0B" stroke-width="1.5" opacity="0.4"/>
+  <line x1="95" y1="92" x2="105" y2="88" stroke="#F59E0B" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- Status indicator -->
+  <circle cx="130" cy="70" r="4" fill="#10B981"/>
+  <circle cx="130" cy="70" r="2" fill="white"/>
+
+  <!-- Text elements -->
+  <text x="100" y="135" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="14" font-weight="bold">RUNPOD</text>
+  <text x="100" y="150" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="12" opacity="0.8">LLM MANAGER</text>
+</svg>

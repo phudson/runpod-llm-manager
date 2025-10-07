@@ -1,0 +1,253 @@
+{
+  "components": [
+    {
+      "bom-ref": "requirements-L6",
+      "description": "requirements line 6: aiofiles>=23.0.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/aiofiles/"
+        }
+      ],
+      "name": "aiofiles",
+      "purl": "pkg:pypi/aiofiles",
+      "type": "library"
+    },
+    {
+      "bom-ref": "requirements-L11",
+      "description": "requirements line 11: cyclonedx-bom>=4.0.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/cyclonedx-bom/"
+        }
+      ],
+      "name": "cyclonedx-bom",
+      "purl": "pkg:pypi/cyclonedx-bom",
+      "type": "library"
+    },
+    {
+      "bom-ref": "requirements-L2",
+      "description": "requirements line 2: fastapi>=0.104.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/fastapi/"
+        }
+      ],
+      "name": "fastapi",
+      "purl": "pkg:pypi/fastapi",
+      "type": "library"
+    },
+    {
+      "bom-ref": "requirements-L3",
+      "description": "requirements line 3: httpx>=0.25.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/httpx/"
+        }
+      ],
+      "name": "httpx",
+      "purl": "pkg:pypi/httpx",
+      "type": "library"
+    },
+    {
+      "bom-ref": "requirements-L17",
+      "description": "requirements line 17: pip-licenses>=4.0.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/pip-licenses/"
+        }
+      ],
+      "name": "pip-licenses",
+      "purl": "pkg:pypi/pip-licenses",
+      "type": "library"
+    },
+    {
+      "bom-ref": "requirements-L5",
+      "description": "requirements line 5: pydantic>=2.0.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/pydantic/"
+        }
+      ],
+      "name": "pydantic",
+      "purl": "pkg:pypi/pydantic",
+      "type": "library"
+    },
+    {
+      "bom-ref": "requirements-L20",
+      "description": "requirements line 20: pytest>=7.0.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/pytest/"
+        }
+      ],
+      "name": "pytest",
+      "purl": "pkg:pypi/pytest",
+      "type": "library"
+    },
+    {
+      "bom-ref": "requirements-L21",
+      "description": "requirements line 21: pytest-asyncio>=0.21.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/pytest-asyncio/"
+        }
+      ],
+      "name": "pytest-asyncio",
+      "purl": "pkg:pypi/pytest-asyncio",
+      "type": "library"
+    },
+    {
+      "bom-ref": "requirements-L7",
+      "description": "requirements line 7: requests>=2.31.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/requests/"
+        }
+      ],
+      "name": "requests",
+      "purl": "pkg:pypi/requests",
+      "type": "library"
+    },
+    {
+      "bom-ref": "requirements-L14",
+      "description": "requirements line 14: safety>=2.3.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/safety/"
+        }
+      ],
+      "name": "safety",
+      "purl": "pkg:pypi/safety",
+      "type": "library"
+    },
+    {
+      "bom-ref": "requirements-L4",
+      "description": "requirements line 4: uvicorn[standard]>=0.24.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/uvicorn/"
+        }
+      ],
+      "name": "uvicorn",
+      "properties": [
+        {
+          "name": "cdx:python:package:required-extra",
+          "value": "standard"
+        }
+      ],
+      "purl": "pkg:pypi/uvicorn",
+      "type": "library"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "requirements-L11"
+    },
+    {
+      "ref": "requirements-L14"
+    },
+    {
+      "ref": "requirements-L17"
+    },
+    {
+      "ref": "requirements-L2"
+    },
+    {
+      "ref": "requirements-L20"
+    },
+    {
+      "ref": "requirements-L21"
+    },
+    {
+      "ref": "requirements-L3"
+    },
+    {
+      "ref": "requirements-L4"
+    },
+    {
+      "ref": "requirements-L5"
+    },
+    {
+      "ref": "requirements-L6"
+    },
+    {
+      "ref": "requirements-L7"
+    }
+  ],
+  "metadata": {
+    "timestamp": "2025-10-07T13:52:01.475081+00:00",
+    "tools": [
+      {
+        "vendor": "CycloneDX",
+        "name": "cyclonedx-py",
+        "version": "latest"
+      }
+    ],
+    "component": {
+      "type": "application",
+      "name": "runpod-llm-manager",
+      "version": "1.0.0",
+      "description": "RunPod LLM Pod Manager with FastAPI Proxy - Individual Developer Project",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "supplier": {
+        "name": "Individual Developer",
+        "contact": [
+          {
+            "name": "Individual Developer"
+          }
+        ]
+      }
+    },
+    "properties": [
+      {
+        "name": "cdx:compliance:eu_cyber_resilience_act",
+        "value": "Individual developer exemption applies"
+      },
+      {
+        "name": "cdx:security:headers",
+        "value": "Implemented"
+      },
+      {
+        "name": "cdx:security:rate_limiting",
+        "value": "Implemented"
+      },
+      {
+        "name": "cdx:security:input_validation",
+        "value": "Implemented"
+      }
+    ]
+  },
+  "serialNumber": "urn:uuid:aaafc8eb-395d-40b4-ba4e-4ece3b714776",
+  "version": 1,
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6"
+}

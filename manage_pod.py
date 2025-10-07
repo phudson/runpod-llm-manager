@@ -10,11 +10,12 @@ import signal
 import subprocess
 from datetime import datetime, timedelta, timezone
 
-CONFIG_PATH = "pod_config.json"
-STATE_PATH = "pod_state.json"
-LOCKFILE = "/tmp/runpod_manage.lock"
-PROXY_PID_FILE = "/tmp/fastapi_proxy.pid"
-RUNPOD_API_URL = "https://api.runpod.io/graphql"
+# Configuration - make paths configurable for different environments
+CONFIG_PATH = os.getenv("CONFIG_PATH", "pod_config.json")
+STATE_PATH = os.getenv("STATE_PATH", "pod_state.json")
+LOCKFILE = os.getenv("LOCKFILE", "/tmp/runpod_manage.lock")
+PROXY_PID_FILE = os.getenv("PROXY_PID_FILE", "/tmp/fastapi_proxy.pid")
+RUNPOD_API_URL = os.getenv("RUNPOD_API_URL", "https://api.runpod.io/graphql")
 
 verbose = "--verbose" in sys.argv
 dry_run = "--dry-run" in sys.argv
@@ -43,11 +44,28 @@ def graphql_request(query, variables=None):
         response = requests.post(RUNPOD_API_URL, json=payload, headers=headers, timeout=10)
         data = response.json()
         if "data" not in data:
-            print("❌ Unexpected GraphQL response:", data)
+            # Sanitize error output to prevent information disclosure
+            error_msg = data.get("errors", [{}])[0].get("message", "Unknown error") if "errors" in data else "Invalid response format"
+            print(f"❌ GraphQL API error: {error_msg}")
+            log(f"GraphQL API returned error: {error_msg}")
             sys.exit(1)
         return data
-    except requests.exceptions.RequestException as e:
-        print(f"❌ GraphQL request error: {e}")
+    except requests.exceptions.Timeout:
+        print("❌ GraphQL request timeout - check network connection")
+        sys.exit(1)
+    except requests.exceptions.ConnectionError:
+        print("❌ GraphQL connection error - check network connectivity")
+        sys.exit(1)
+    except requests.exceptions.HTTPError as e:
+        print(f"❌ GraphQL HTTP error: {e.response.status_code}")
+        sys.exit(1)
+    except ValueError as e:
+        print("❌ Invalid JSON response from GraphQL API")
+        log(f"JSON parsing error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print("❌ Unexpected error communicating with GraphQL API")
+        log(f"Unexpected GraphQL error: {type(e).__name__}: {e}")
         sys.exit(1)
 
 def load_config():
@@ -133,11 +151,33 @@ def health_check_proxy(proxy_port=8000, timeout=5):
     try:
         response = requests.get(f"http://localhost:{proxy_port}/health", timeout=timeout)
         return response.status_code == 200
-    except:
+    except requests.exceptions.Timeout:
+        log("Proxy health check timed out")
+        return False
+    except requests.exceptions.ConnectionError:
+        log("Cannot connect to proxy for health check")
+        return False
+    except Exception as e:
+        log(f"Unexpected error during proxy health check: {e}")
         return False
 
 def update_proxy(ip, port, config):
     log("Starting FastAPI proxy...")
+
+    # Validate IP address format to prevent command injection
+    import ipaddress
+    try:
+        # Allow both IPv4 and IPv6, and localhost
+        if ip not in ["localhost", "127.0.0.1", "::1"]:
+            ipaddress.ip_address(ip)  # Validates IP format
+    except ValueError:
+        print(f"❌ Invalid IP address format: {ip}")
+        sys.exit(1)
+
+    # Validate port
+    if not isinstance(port, int) or not (1 <= port <= 65535):
+        print(f"❌ Invalid port number: {port}")
+        sys.exit(1)
 
     # Validate configuration
     proxy_port = config.get("proxy_port", 8000)
@@ -272,19 +312,43 @@ def refresh_catalog():
     """
     gpus = query(gpus_q)["data"]["gpuTypes"]
 
-    models = [
-        "deepseek-ai/deepseek-coder-33b-awq",
-        "mistralai/Mistral-7B-Instruct-v0.2",
-        "openchat/openchat-3.5-0106",
-        "Qwen/Qwen1.5-7B-Chat"
-    ]
+    # Query Model Store models
+    model_store_q = """
+    query {
+      modelStore {
+        id
+        name
+        description
+      }
+    }
+    """
+    try:
+        model_store = query(model_store_q)["data"]["modelStore"]
+        model_store_ids = [m["id"] for m in model_store]
+        model_store_names = {m["id"]: m["name"] for m in model_store}
+    except KeyError:
+        log("Model Store not available, falling back to hardcoded models")
+        model_store = []
+        model_store_ids = []
+        model_store_names = {}
+
+    # Fallback models if Model Store is empty
+    if not model_store:
+        model_store_ids = [
+            "deepseek-ai/deepseek-coder-33b-awq",
+            "mistralai/Mistral-7B-Instruct-v0.2",
+            "openchat/openchat-3.5-0106",
+            "Qwen/Qwen1.5-7B-Chat"
+        ]
+        model_store_names = {id: id for id in model_store_ids}
 
     catalog = {
         "template_id": latest_template["id"] if latest_template else None,
         "template_name": latest_template["name"] if latest_template else None,
         "gpu_types": [g["id"] for g in gpus],
         "gpu_names": {g["id"]: g["displayName"] for g in gpus},
-        "models": models
+        "model_store_ids": model_store_ids,
+        "model_store_names": model_store_names
     }
 
     if verbose:
@@ -293,9 +357,9 @@ def refresh_catalog():
         print("- GPU Types:")
         for gid in catalog["gpu_types"]:
             print(f"  • {gid} ({catalog['gpu_names'][gid]})")
-        print("- Supported Models:")
-        for m in catalog["models"]:
-            print(f"  • {m}")
+        print("- Model Store Models:")
+        for mid in catalog["model_store_ids"]:
+            print(f"  • {mid} ({catalog['model_store_names'][mid]})")
 
     return catalog
 
@@ -309,9 +373,9 @@ def validate_config(config, catalog):
         valid = ", ".join([f"{k} ({v})" for k, v in catalog["gpu_names"].items()])
         errors.append(f"Invalid gpu_type_id: {config['gpu_type_id']}\nValid options: {valid}")
 
-    if config["model"] not in catalog["models"]:
-        valid = ", ".join(catalog["models"])
-        errors.append(f"Invalid model: {config['model']}\nValid options: {valid}")
+    if config["modelStoreId"] not in catalog["model_store_ids"]:
+        valid = ", ".join([f"{k} ({v})" for k, v in catalog["model_store_names"].items()])
+        errors.append(f"Invalid modelStoreId: {config['modelStoreId']}\nValid options: {valid}")
 
     if errors:
         print("❌ Configuration validation failed:")
@@ -338,13 +402,11 @@ def start_pod(config, adjusted_runtime=None):
         "templateId": config["template_id"],
         "cloudType": "SECURE",
         "gpuTypeId": config["gpu_type_id"],
+        "modelId": config["modelStoreId"],
         "containerDiskInGb": 20,
         "volumeInGb": 0,
         "startJupyter": False,
-        "name": "runpod-llm",
-        "env": {
-            "MODEL_NAME": config["model"]
-        }
+        "name": "runpod-llm"
     }
     result = graphql_request(mutation, {"input": input_data})
     pod_id = result["data"]["podCreate"]["id"]
@@ -364,7 +426,7 @@ def start_pod(config, adjusted_runtime=None):
         if pod["status"] == "RUNNING" and pod["ip"]:
             port = pod["ports"][0]["publicPort"]
             update_proxy(pod["ip"], port, config)
-            if not dry_run and not health_check(pod["ip"], port, config["model"]):
+            if not dry_run and not health_check(pod["ip"], port, config["modelStoreId"]):
                 print("❌ Pod endpoint failed health check.")
                 shutdown({"pod_id": pod_id})
                 sys.exit(1)
@@ -491,9 +553,13 @@ def main():
             pod_id = state.get("pod_id")
             try:
                 pod = get_pod_status(pod_id)
-            except Exception as e:
-                log(f"⚠️ Failed to query pod status: {e}")
+            except (requests.exceptions.RequestException, requests.exceptions.Timeout) as e:
+                log(f"⚠️ Network error querying pod status: {e}")
                 print("🌐 Network issue detected. Skipping restart.")
+                return
+            except Exception as e:
+                log(f"⚠️ Unexpected error querying pod status: {type(e).__name__}: {e}")
+                print("❌ Unexpected error checking pod status.")
                 return
 
             status = pod.get("status")

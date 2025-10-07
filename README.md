@@ -1,4 +1,9 @@
-# 🧠 RunPod LLM Pod Manager with FastAPI Proxy
+# ![Logo](logo.svg) RunPod LLM Pod Manager with FastAPI Proxy
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![SBOM](https://img.shields.io/badge/SBOM-CycloneDX-blue)](sbom.json)
+[![Security](https://img.shields.io/badge/Security-Enterprise-green)](SECURITY.md)
 
 This advanced system automates the full lifecycle of GPU-backed LLM pods on RunPod, featuring enterprise-grade caching, monitoring, security, and a high-performance FastAPI reverse proxy for development tools like Continue, CodeGPT, and Prinova Cody.
 
@@ -21,9 +26,15 @@ This advanced system automates the full lifecycle of GPU-backed LLM pods on RunP
 | File                          | Description                                                                 |
 |-------------------------------|-----------------------------------------------------------------------------|
 | `manage_pod.py`               | 🚀 Unified lifecycle controller: start, restart, terminate, watchdog        |
-| `proxy_fastapi.py`            | ⚡ FastAPI proxy with caching, metrics, SSL, and health monitoring          |
+| `proxy_fastapi.py`            | ⚡ FastAPI proxy with caching, metrics, SSL, and security monitoring        |
+| `security_utils.py`           | 🔒 Security utilities: SBOM generation, vulnerability scanning, compliance |
 | `pod_config.json`             | ⚙️ Configuration file with model, GPU, cache, SSL, and runtime settings     |
 | `pod_state.json`              | 📊 Auto-generated state file storing pod ID, model, and runtime info        |
+| `requirements.txt`            | 📦 Python dependencies with security and compliance tools                   |
+| `SECURITY.md`                 | 🛡️ Comprehensive security documentation and compliance guide                |
+| `test_strategy.md`            | 🧪 Detailed testing strategy for manual and automated pod management        |
+| `LICENSE`                      | 📜 MIT license for the project with LGPL compliance notes                    |
+| `.github/`                     | ⚙️ GitHub repository configuration and community health files               |
 | `.gitignore`                  | 🚫 Prevents committing sensitive files and local artifacts                 |
 | `README.md`                   | 📖 This comprehensive documentation                                        |
 
@@ -42,15 +53,46 @@ This advanced system automates the full lifecycle of GPU-backed LLM pods on RunP
 ### 📦 Installation
 
 1. **Clone or download the repository:**
-   ```bash
-   git clone <repository-url>
-   cd runpod-llm-manager
-   ```
+    ```bash
+    git clone <repository-url>
+    cd runpod-llm-manager
+    ```
 
 2. **Install Python dependencies:**
-    ```bash
-    pip install fastapi httpx uvicorn requests aiofiles
-    ```
+     ```bash
+     # Core dependencies (required)
+     pip install fastapi httpx uvicorn pydantic aiofiles requests
+
+     # Security and compliance tools (recommended)
+     pip install cyclonedx-bom safety pip-licenses
+     ```
+
+     Or install all at once:
+     ```bash
+     pip install -r requirements.txt
+     ```
+
+## 📜 License Compliance
+
+This project uses a mix of permissive and copyleft licenses:
+
+### Permissive Licenses (MIT, BSD, Apache)
+- **fastapi**, **httpx**, **uvicorn**, **pydantic**, **aiofiles**, **requests**
+- No restrictions on use, modification, or distribution
+
+### Copyleft Licenses (LGPL)
+- **chardet** (LGPL v2.1+): Character encoding detection
+- **frozendict** (LGPL v3+): Immutable dictionary implementation
+
+### Distribution Compliance
+Since this software may be distributed via GitHub:
+
+1. **Source Code Availability**: ✅ Complete source code is provided
+2. **License Texts**: ✅ All licenses are included in dependencies
+3. **LGPL Compliance**: ✅ Users can replace LGPL components if desired
+4. **No Modifications**: ✅ LGPL libraries are used unmodified
+
+**Note**: As an individual developer distributing non-commercial software, you have additional fair use protections, but this documentation ensures compliance for all users.
 
 3. **Set up environment variables:**
    ```bash
@@ -151,7 +193,7 @@ Create `pod_config.json` with comprehensive settings:
 
 ```json
 {
-  "model": "deepseek-ai/deepseek-coder-33b-awq",
+  "modelStoreId": "deepseek-ai/deepseek-coder-33b-awq",
   "gpu_type_id": "NVIDIA RTX A6000",
   "runtime_seconds": 3600,
   "template_id": "vllm"
@@ -162,7 +204,7 @@ Create `pod_config.json` with comprehensive settings:
 
 ```json
 {
-  "model": "deepseek-ai/deepseek-coder-33b-awq",
+  "modelStoreId": "deepseek-ai/deepseek-coder-33b-awq",
   "gpu_type_id": "NVIDIA RTX A6000",
   "runtime_seconds": 3600,
   "template_id": "vllm",
@@ -189,7 +231,7 @@ Create `pod_config.json` with comprehensive settings:
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `model` | string | required | Hugging Face model identifier |
+| `modelStoreId` | string | required | Model Store model identifier |
 | `gpu_type_id` | string | required | GPU type for pod deployment |
 | `runtime_seconds` | int | 3600 | Maximum pod runtime in seconds |
 | `template_id` | string | "vllm" | RunPod template identifier |
@@ -258,9 +300,9 @@ http://localhost:8000/v1/chat/completions
 
 #### 📊 Monitoring Endpoints
 
-- **Health Check**: `GET /health`
-- **Metrics**: `GET /metrics`
-- **Dashboard**: `GET /dashboard`
+- **Health Check**: `GET /health` - includes rate limiting status
+- **Metrics**: `GET /metrics` - performance and cache statistics
+- **Dashboard**: `GET /dashboard` - comprehensive system overview with security info
 - **Debug Cache** (if profiling enabled): `GET /debug/cache`
 
 ### 📈 Monitoring & Metrics
@@ -287,7 +329,47 @@ export MAX_CACHE_SIZE="2000"          # Increase cache size
 export CACHE_SIZE_BYTES="2147483648"  # 2GB cache
 export ENABLE_PROFILING="true"        # Enable debug endpoints
 export PREWARM_CACHE="true"           # Pre-populate cache with common patterns
+
+# Security configuration
+export RATE_LIMIT_REQUESTS="60"       # Requests per window
+export RATE_LIMIT_WINDOW="60"         # Window in seconds
+export USE_HTTPS="false"              # Enable HTTPS
+export SSL_CERT="/path/to/cert.pem"   # SSL certificate path
+export SSL_KEY="/path/to/key.pem"     # SSL private key path
 ```
+
+## 🔐 Security & Compliance
+
+### EU Regulatory Compliance
+This system implements security measures aligned with EU regulations including the Cyber Resilience Act (CRA) and GDPR. As non-commercial software developed by an individual, you're likely exempt from most CRA requirements, but these features ensure future compliance readiness.
+
+### 🛡️ Security Features
+- **Rate Limiting**: 60 requests/minute per IP with RFC-compliant headers
+- **Input Validation**: Pydantic-based validation with content sanitization
+- **Security Headers**: XSS, CSRF, and content-type protection
+- **HTTPS Enforcement**: HSTS when SSL is enabled
+- **CORS Protection**: Restricted cross-origin access
+- **Security Monitoring**: Structured logging of security events
+
+### 🔍 Security Tools
+```bash
+# Generate comprehensive security report
+python security_utils.py report
+
+# Scan for vulnerabilities
+python security_utils.py scan
+
+# Check license compliance
+python security_utils.py licenses
+
+# Generate SBOM
+python security_utils.py sbom
+```
+
+### 📊 Security Monitoring
+- **Health Endpoint**: `/health` - includes rate limit status
+- **Security Dashboard**: `/dashboard` - comprehensive system security info
+- **Structured Logging**: JSON-formatted security event logs
 
 ## ✨ Advanced Features
 
@@ -591,6 +673,15 @@ mkdir -p /tmp/llm_cache
 
 ## 🤝 Contributing
 
+We welcome contributions! Please see our [Contributing Guide](.github/CONTRIBUTING.md) for detailed information on how to contribute to this project.
+
+### Quick Start for Contributors
+1. Read the [Code of Conduct](.github/CODE_OF_CONDUCT.md)
+2. Check the [Contributing Guide](.github/CONTRIBUTING.md)
+3. Report issues using our [issue templates](.github/ISSUE_TEMPLATE/)
+4. Submit PRs using our [pull request template](.github/PULL_REQUEST_TEMPLATE.md)
+
+### Development Guidelines
 This system is designed to be:
 - **Modular**: Easy to extend with new features
 - **Configurable**: All major settings are configurable
@@ -608,10 +699,16 @@ This system is designed to be:
 
 ## 📄 License
 
-This project is open source. Please ensure compliance with:
-- RunPod Terms of Service
-- Hugging Face model licenses
-- Local data privacy regulations
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### License Compliance Requirements
+
+Please ensure compliance with:
+- **MIT License**: For the original project code
+- **LGPL Compliance**: For chardet and frozendict dependencies (see License Compliance section above)
+- **RunPod Terms of Service**: When using RunPod infrastructure
+- **Hugging Face model licenses**: For any models deployed
+- **Local data privacy regulations**: GDPR and other applicable laws
 
 ---
 

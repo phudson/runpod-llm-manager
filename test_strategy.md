@@ -2,7 +2,7 @@
 
 ## Overview
 
-This test strategy covers comprehensive testing of the RunPod LLM Pod Manager system, including both manual and automated components. The strategy focuses on validating the full lifecycle from manual pod setup through automated management, with emphasis on VSCode integration for development tools like Kilo Code.
+This test strategy covers comprehensive testing of the RunPod LLM Pod Manager system with Model Store integration, including both manual and automated components. The strategy focuses on validating the full lifecycle from manual pod setup through automated management, with emphasis on VSCode integration for development tools like Kilo Code and proper Model Store model selection.
 
 ## Test Objectives
 
@@ -10,6 +10,7 @@ This test strategy covers comprehensive testing of the RunPod LLM Pod Manager sy
 - ✅ Test FastAPI proxy functionality and caching
 - ✅ Verify VSCode extension integration (Kilo Code)
 - ✅ Test automated pod management via manage_pod.py
+- ✅ Validate Model Store integration and model selection
 - ✅ Ensure proper cleanup and cost control
 - ✅ Validate performance optimizations and monitoring
 
@@ -58,8 +59,8 @@ mkdir -p /tmp/llm_cache
    - **Container Disk**: 20GB
    - **Volume**: 0GB
    - **Start Jupyter**: Disabled
-5. Set environment variable:
-   - **MODEL_NAME**: deepseek-coder-33b-awq
+5. Configure Model Store:
+   - **Model**: Select from available Model Store models (e.g., deepseek-ai/deepseek-coder-33b-awq)
 6. Click "Deploy" and wait for pod to become RUNNING
 7. Note the pod's **Public IP** and **Port** (typically 8000)
 
@@ -285,7 +286,30 @@ mkdir -p /tmp/llm_cache
 
 ## Phase 3: Managed Pod Testing
 
-### 3.1 Configuration Setup
+### 3.1 Model Store Validation
+
+**Objective**: Verify Model Store integration and available models.
+
+**Steps**:
+1. Test catalog refresh with Model Store:
+   ```bash
+   python3 manage_pod.py --refresh-catalog --verbose
+   ```
+
+2. Verify Model Store models are listed:
+   - Check that modelStoreIds are displayed
+   - Confirm fallback models work if Model Store unavailable
+
+3. Validate modelStoreId configuration:
+   - Ensure modelStoreId in pod_config.json matches available models
+   - Test with invalid modelStoreId (should fail validation)
+
+**Expected Results**:
+- Model Store models fetched successfully
+- Verbose output shows modelStoreIds and names
+- Configuration validation passes with valid modelStoreId
+
+### 3.2 Configuration Setup
 
 **Objective**: Set up pod_config.json for automated testing.
 
@@ -293,7 +317,7 @@ mkdir -p /tmp/llm_cache
 1. Update pod_config.json:
    ```json
    {
-     "model": "deepseek-ai/deepseek-coder-33b-awq",
+     "modelStoreId": "deepseek-ai/deepseek-coder-33b-awq",
      "gpu_type_id": "NVIDIA RTX A6000",
      "runtime_seconds": 1800,
      "template_id": "vllm",
@@ -461,6 +485,7 @@ mkdir -p /tmp/llm_cache
 - ✅ Manual pod creation and proxy startup
 - ✅ VSCode extension configuration and functionality
 - ✅ Automated pod management and lifecycle
+- ✅ Model Store integration and model validation
 - ✅ Proper cleanup and cost control
 - ✅ Error handling and recovery
 - ✅ Cache functionality and performance

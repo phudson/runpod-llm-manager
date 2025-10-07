@@ -1,5 +1,5 @@
 {
-  "model": "deepseek",
+  "modelStoreId": "deepseek-ai/deepseek-coder-33b-awq",
   "pricing_mode": "SECURE",
   "runtime_seconds": 3600,
   "gpu_type_id": "A6000",
