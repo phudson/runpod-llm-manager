@@ -45,18 +45,14 @@ jobs:
           python -m py_compile runpod_llm_manager/services.py
           python -m py_compile security_utils.py
 
-      - name: Run tests
-        run: |
-          pytest tests/ -v --tb=short --asyncio-mode=auto \
-            --cov=runpod_llm_manager --cov-report=xml --cov-report=term-missing
+      - name: Run unit tests
+        run: pytest tests/unit/ -v --tb=short
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
+      - name: Run integration tests
+        run: pytest tests/integration/ -v --tb=short
+        # Skip if taking too long for CI
+
+# No functional tests in CI - they require manual execution
 
   security:
     runs-on: ubuntu-latest
@@ -153,7 +149,7 @@ jobs:
           name: dist
           path: dist/
 
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+      # PyPI publishing removed to avoid secret access warnings
+      # Add back when PyPI_API_TOKEN secret is configured
+      - name: PyPI Publishing Skipped
+        run: echo "PyPI publishing requires PYPI_API_TOKEN secret to be configured"

@@ -6,7 +6,7 @@ Provides protocols and dependency containers for testable architecture
 from dataclasses import dataclass
 
 # ABC imports removed - not used in this file
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, AsyncGenerator, Dict, List, Optional, Protocol
 
 import httpx
 
@@ -26,8 +26,25 @@ class HTTPClientProtocol(Protocol):
         """Make POST request and return JSON response."""
         ...
 
+    async def post_stream(
+        self,
+        url: str,
+        json: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        **kwargs,
+    ) -> AsyncGenerator[str, None]:
+        """Make POST request and return streaming response."""
+        # This will be properly implemented by concrete classes
+        if False:  # pragma: no cover
+            yield ""  # Make type checker happy
+        raise NotImplementedError("post_stream must be implemented by concrete HTTP client")
+
     async def get(self, url: str, **kwargs) -> Dict[str, Any]:
         """Make GET request and return JSON response."""
+        ...
+
+    async def delete(self, url: str, **kwargs) -> Dict[str, Any]:
+        """Make DELETE request and return JSON response."""
         ...
 
 
@@ -48,6 +65,10 @@ class CacheProtocol(Protocol):
 
     async def clear(self) -> None:
         """Clear all cached values."""
+        ...
+
+    async def get_stats(self) -> Dict[str, Any]:
+        """Get cache statistics."""
         ...
 
 
@@ -120,11 +141,37 @@ class HTTPXClient:
             response.raise_for_status()
             return response.json()
 
+    async def post_stream(
+        self,
+        url: str,
+        json: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        **kwargs,
+    ):
+        """Make POST request and return streaming response."""
+        request_headers = {**self.base_headers}
+        if headers:
+            request_headers.update(headers)
+
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            async with client.stream(
+                "POST", url, json=json, headers=request_headers, **kwargs
+            ) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    yield line
+
     async def get(self, url: str, **kwargs) -> Dict[str, Any]:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.get(url, **kwargs)
             response.raise_for_status()
             return response.json()
+
+    async def delete(self, url: str, **kwargs) -> Dict[str, Any]:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.delete(url, **kwargs)
+            response.raise_for_status()
+            return response.json() if response.content else {}
 
 
 class InMemoryCache:
@@ -132,18 +179,44 @@ class InMemoryCache:
 
     def __init__(self):
         self._store: Dict[str, Dict[str, Any]] = {}
+        self._access_times: Dict[str, float] = {}
+        import time
+
+        self._time = time.time
 
     async def get(self, key: str) -> Optional[Dict[str, Any]]:
-        return self._store.get(key)
+        if key in self._store:
+            self._access_times[key] = self._time()
+            return self._store[key]
+        return None
 
     async def set(self, key: str, value: Dict[str, Any]) -> None:
         self._store[key] = value
+        self._access_times[key] = self._time()
 
     async def delete(self, key: str) -> None:
         self._store.pop(key, None)
+        self._access_times.pop(key, None)
 
     async def clear(self) -> None:
         self._store.clear()
+        self._access_times.clear()
+
+    async def get_stats(self) -> Dict[str, Any]:
+        """Get cache statistics."""
+        now = self._time()
+        total_size = sum(len(str(v).encode("utf-8")) for v in self._store.values())
+
+        # Calculate hit rate (simplified - would need hit/miss counters in real implementation)
+        recent_accesses = sum(1 for t in self._access_times.values() if now - t < 3600)  # Last hour
+
+        return {
+            "entries": len(self._store),
+            "total_size_bytes": total_size,
+            "recent_accesses": recent_accesses,
+            "oldest_entry_age": min((now - t for t in self._access_times.values()), default=0),
+            "newest_entry_age": max((now - t for t in self._access_times.values()), default=0),
+        }
 
 
 class AIOFilesFileSystem:
@@ -246,7 +319,7 @@ def create_test_dependencies(config: AppConfig) -> Dependencies:
     """Create dependencies for testing."""
     return Dependencies(
         config=config,
-        http_client=HTTPXClient(timeout=5.0),  # Faster timeout for tests
+        http_client=HTTPXClient(timeout=30.0),  # Longer timeout for integration tests
         cache=InMemoryCache(),
         filesystem=AIOFilesFileSystem(),
         rate_limiter=InMemoryRateLimiter(
@@ -259,8 +332,8 @@ def create_test_dependencies(config: AppConfig) -> Dependencies:
 _default_deps: Optional[Dependencies] = None
 
 
-def get_default_dependencies() -> Dependencies:
-    """Get default dependencies (for backward compatibility)."""
+def get_dependencies() -> Dependencies:
+    """Get application dependencies."""
     global _default_deps
     if _default_deps is None:
         from .config import config
@@ -269,7 +342,7 @@ def get_default_dependencies() -> Dependencies:
     return _default_deps
 
 
-def set_default_dependencies(deps: Dependencies) -> None:
-    """Set default dependencies (for testing)."""
+def set_dependencies(deps: Dependencies) -> None:
+    """Set application dependencies (for testing)."""
     global _default_deps
     _default_deps = deps

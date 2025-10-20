@@ -11,7 +11,8 @@ from fastapi.testclient import TestClient
 from runpod_llm_manager.config import AppConfig
 from runpod_llm_manager.dependencies import Dependencies, create_test_dependencies
 from runpod_llm_manager.proxy_fastapi import app
-from test_mocks import (
+from tests.fixtures.mock_services import (
+    create_chat_completion_response,
     create_completion_response,
     create_mock_dependencies,
     create_pod_create_response,
@@ -20,6 +21,14 @@ from test_mocks import (
     create_test_config,
     create_test_pod_config,
 )
+
+
+# Configure pytest markers
+def pytest_configure(config):
+    """Configure pytest markers for different test types."""
+    config.addinivalue_line("markers", "unit: fast unit tests")
+    config.addinivalue_line("markers", "integration: integration tests with mocks")
+    config.addinivalue_line("markers", "functional: real service tests")
 
 
 @pytest.fixture
@@ -52,10 +61,10 @@ def mock_deps(test_config: AppConfig) -> Dependencies:
 @pytest.fixture
 def mock_http_client():
     """Mock HTTP client with common responses."""
-    from test_mocks import MockHTTPClient
+    from tests.fixtures.mock_services import MockHTTPClient
 
     responses = {
-        "http://mock-runpod:4010/v1/chat/completions": create_completion_response(),
+        "http://mock-runpod:4010/v1/chat/completions": create_chat_completion_response(),
         "http://mock-runpod:4010/graphql": create_pod_create_response(),
     }
 
@@ -130,7 +139,7 @@ def oversized_payload() -> Dict[str, Any]:
 @pytest.fixture
 def rate_limited_client():
     """Client that has exceeded rate limits."""
-    from test_mocks import MockRateLimiter
+    from tests.fixtures.mock_services import MockRateLimiter
 
     limiter = MockRateLimiter(always_allow=False, remaining_requests=0)
     return limiter
@@ -139,7 +148,7 @@ def rate_limited_client():
 @pytest.fixture
 def healthy_rate_limiter():
     """Rate limiter with available requests."""
-    from test_mocks import MockRateLimiter
+    from tests.fixtures.mock_services import MockRateLimiter
 
     return MockRateLimiter(always_allow=True, remaining_requests=50)
 
@@ -148,7 +157,7 @@ def healthy_rate_limiter():
 @pytest.fixture
 def populated_cache():
     """Cache with some test data."""
-    from test_mocks import MockCache
+    from tests.fixtures.mock_services import MockCache
 
     cache = MockCache()
     cache.store["test-key"] = {"cached": "response"}
@@ -158,6 +167,6 @@ def populated_cache():
 @pytest.fixture
 def empty_cache():
     """Empty cache for testing."""
-    from test_mocks import MockCache
+    from tests.fixtures.mock_services import MockCache
 
     return MockCache()

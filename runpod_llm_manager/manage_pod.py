@@ -18,8 +18,9 @@ from typing import Any, Dict, List
 import requests
 
 from .config import config
-from .dependencies import get_default_dependencies
-from .services import PodManagementService
+from .dependencies import get_dependencies
+from .pod_service import PodManagementService
+from .serverless_service import ServerlessService
 
 # CLI flags
 verbose = "--verbose" in sys.argv
@@ -34,31 +35,10 @@ def log(msg):
 
 
 # Constants
-CONFIG_PATH = os.getenv("CONFIG_PATH", "pod_config.json")
+CONFIG_PATH = os.getenv("CONFIG_PATH", "llm_config.json")
 STATE_PATH = os.getenv("STATE_PATH", "pod_state.json")
 PROXY_PID_FILE = os.getenv("PROXY_PID_FILE", "/tmp/fastapi_proxy.pid")
 LOCKFILE = os.getenv("LOCKFILE", "/tmp/runpod_manage.lock")
-
-
-def graphql_request(query, variables=None):
-    """Make a GraphQL request to RunPod API."""
-    if dry_run:
-        log("Dry-run mode: skipping GraphQL request.")
-        return {}
-    headers = {"Authorization": f"Bearer {get_api_key()}"}
-    payload = {"query": query}
-    if variables:
-        payload["variables"] = variables
-    try:
-        response = requests.post(RUNPOD_API_URL, json=payload, headers=headers, timeout=10)
-        data = response.json()
-        if "data" not in data:
-            print("❌ Unexpected GraphQL response:", data)
-            sys.exit(1)
-        return data
-    except requests.exceptions.RequestException as e:
-        print(f"❌ GraphQL request error: {e}")
-        sys.exit(1)
 
 
 def get_api_key():
@@ -68,9 +48,6 @@ def get_api_key():
         print("❌ Invalid or missing RUNPOD_API_KEY.")
         sys.exit(1)
     return key
-
-
-RUNPOD_API_URL = "https://api.runpod.io/graphql"
 
 
 def validate_environment():
@@ -140,64 +117,148 @@ def pod_is_expired(state, config):
     return expired
 
 
-def shutdown(state):
-    """Shutdown active pod and proxy."""
+async def shutdown_async(state):
+    """Shutdown active pod/endpoint and proxy using service layer."""
     # Stop the proxy first
     stop_proxy()
 
-    pod_id = state.get("pod_id")
-    if pod_id:
-        log(f"Terminating pod {pod_id}...")
-        mutation = """
-        mutation TerminatePod($id: ID!) {
-          podTerminate(id: $id) {
-            id
-          }
+    mode = state.get("mode", "pod")
+    deps = get_dependencies()
+
+    if mode == "pod":
+        pod_id = state.get("pod_id")
+        if pod_id:
+            log(f"Terminating pod {pod_id}...")
+            pod_service = PodManagementService(deps)
+            await pod_service.terminate_pod(pod_id)
+            if os.path.exists(STATE_PATH):
+                os.remove(STATE_PATH)
+            log("Pod state file removed.")
+            print(f"🛑 Pod {pod_id} terminated.")
+        else:
+            print("ℹ️ No active pod to shut down.")
+    elif mode == "serverless":
+        endpoint_id = state.get("endpoint_id")
+        if endpoint_id:
+            log(f"Deleting endpoint {endpoint_id}...")
+            serverless_service = ServerlessService(deps)
+            await serverless_service.delete_endpoint(endpoint_id)
+            if os.path.exists(STATE_PATH):
+                os.remove(STATE_PATH)
+            log("Endpoint state file removed.")
+            print(f"🛑 Endpoint {endpoint_id} deleted.")
+        else:
+            print("ℹ️ No active endpoint to shut down.")
+
+
+def shutdown(state):
+    """Shutdown active pod/endpoint and proxy."""
+    import asyncio
+
+    asyncio.run(shutdown_async(state))
+
+
+async def refresh_catalog_async():
+    """Refresh and display RunPod catalog information using service layer."""
+    log("Refreshing RunPod catalog...")
+    deps = get_dependencies()
+    pod_service = PodManagementService(deps)
+    serverless_service = ServerlessService(deps)
+
+    catalog: Dict[str, Any] = {}
+
+    # Get available templates from API
+    templates_response = await deps.http_client.get(
+        "https://api.runpod.ai/v2/templates",
+        headers={"Authorization": f"Bearer {deps.config.runpod_api_key}"},
+    )
+
+    if not isinstance(templates_response, list):
+        raise ValueError(
+            f"Invalid API response for templates: expected list, got {type(templates_response)}"
+        )
+
+    if not templates_response:
+        raise ValueError("No templates available from RunPod API")
+
+    catalog["templates"] = []
+    for template in templates_response:
+        if isinstance(template, dict):
+            template_info = {
+                "id": template.get("id", ""),
+                "name": template.get("name", ""),
+                "image_name": template.get("imageName", ""),
+                "description": template.get("description", ""),
+                "gpu_types": template.get("gpuTypes", []),
+                "is_vllm": "vllm" in template.get("name", "").lower()
+                or "llm" in template.get("name", "").lower(),
+            }
+            catalog["templates"].append(template_info)
+
+    # Get GPU types (hardcoded for now as API may not provide this)
+    catalog["gpu_types"] = [
+        {"id": "NVIDIA RTX A6000", "name": "NVIDIA RTX A6000", "vram_gb": 48},
+        {"id": "NVIDIA RTX 4090", "name": "NVIDIA RTX 4090", "vram_gb": 24},
+        {"id": "NVIDIA A100 80GB", "name": "NVIDIA A100 80GB", "vram_gb": 80},
+    ]
+
+    # Get model store information (would need real ModelStore API)
+    catalog["model_store"] = []
+    known_models = [
+        "deepseek-ai/deepseek-coder-33b-awq",
+        "mistralai/Mistral-7B-Instruct-v0.2",
+        "microsoft/DialoGPT-large",
+        "facebook/opt-125m",
+        "gpt2",
+        "gpt2-medium",
+        "gpt2-large",
+    ]
+
+    for model_id in known_models:
+        model_info = {
+            "id": model_id,
+            "name": model_id.split("/")[-1] if "/" in model_id else model_id,
+            "cached": True,  # Assume cached for demo
+            "size_gb": 2.5,  # Placeholder
         }
-        """
-        graphql_request(mutation, {"id": pod_id})
-        if os.path.exists(STATE_PATH):
-            os.remove(STATE_PATH)
-        log("Pod state file removed.")
-        print(f"🛑 Pod {pod_id} terminated.")
-    else:
-        print("ℹ️ No active pod to shut down.")
+        catalog["model_store"].append(model_info)
+
+    log(f"Successfully fetched catalog with {len(catalog['templates'])} templates")
+    return catalog
 
 
 def refresh_catalog():
     """Refresh and display RunPod catalog information."""
-    log("Refreshing RunPod catalog...")
-    deps = get_default_dependencies()
-    pod_service = PodManagementService(deps)
-
-    # This would need to be implemented in the service
-    # For now, return a placeholder
-    catalog: Dict[str, Any] = {
-        "template_id": "vllm",
-        "template_name": "vLLM",
-        "gpu_types": ["A6000", "RTX4090"],
-        "gpu_names": {"A6000": "NVIDIA RTX A6000", "RTX4090": "NVIDIA RTX 4090"},
-        "model_store_ids": [
-            "deepseek-ai/deepseek-coder-33b-awq",
-            "mistralai/Mistral-7B-Instruct-v0.2",
-        ],
-        "model_store_names": {
-            "deepseek-ai/deepseek-coder-33b-awq": "DeepSeek Coder 33B AWQ",
-            "mistralai/Mistral-7B-Instruct-v0.2": "Mistral 7B Instruct v0.2",
-        },
-    }
+    try:
+        catalog = asyncio.run(refresh_catalog_async())
+    except Exception as e:
+        print(f"❌ Failed to refresh catalog: {e}")
+        print("This may be due to network issues or invalid API credentials.")
+        print("Check your RUNPOD_API_KEY and internet connection.")
+        sys.exit(1)
 
     if verbose:
         print("📦 RunPod Catalog:")
-        print(f"- Template ID: {catalog['template_id']} ({catalog['template_name']})")
-        print("- GPU Types:")
-        for gid in catalog["gpu_types"]:
-            gpu_names = catalog["gpu_names"]
-            print(f"  • {gid} ({gpu_names.get(gid, 'Unknown')})")
-        print("- Model Store Models:")
-        for mid in catalog["model_store_ids"]:
-            model_names = catalog["model_store_names"]
-            print(f"  • {mid} ({model_names.get(mid, 'Unknown')})")
+
+        # Display templates
+        if "templates" in catalog and catalog["templates"]:
+            print("Templates:")
+            for template in catalog["templates"][:5]:  # Show first 5
+                vllm_indicator = " (vLLM)" if template.get("is_vllm") else ""
+                print(f"  • {template['id']} - {template['name']}{vllm_indicator}")
+
+        # Display GPU types
+        if "gpu_types" in catalog and catalog["gpu_types"]:
+            print("GPU Types:")
+            for gpu in catalog["gpu_types"]:
+                print(f"  • {gpu['id']} ({gpu['vram_gb']}GB VRAM)")
+
+        # Display model store
+        if "model_store" in catalog and catalog["model_store"]:
+            print("Model Store:")
+            for model in catalog["model_store"][:5]:  # Show first 5
+                cached_indicator = " (cached)" if model.get("cached") else ""
+                print(f"  • {model['id']}{cached_indicator}")
 
     return catalog
 
@@ -206,18 +267,43 @@ def validate_config(config, catalog):
     """Validate configuration against catalog."""
     errors = []
 
-    if config["template_id"] != catalog["template_id"]:
-        errors.append(
-            f"Invalid template_id: {config['template_id']}\nExpected: {catalog['template_id']} ({catalog['template_name']})"
-        )
+    mode = config.get("mode", "pod")
+    if mode not in ["pod", "serverless"]:
+        errors.append(f"Invalid mode: {mode}. Must be 'pod' or 'serverless'")
 
-    if config["gpu_type_id"] not in catalog["gpu_types"]:
-        valid = ", ".join([f"{k} ({v})" for k, v in catalog["gpu_names"].items()])
-        errors.append(f"Invalid gpu_type_id: {config['gpu_type_id']}\nValid options: {valid}")
+    # Validate model configuration
+    if "model" not in config:
+        errors.append("Missing 'model' configuration section")
+    else:
+        model_config = config["model"]
+        if "name" not in model_config:
+            errors.append("Missing 'model.name' in configuration")
 
-    if config["modelStoreId"] not in catalog["model_store_ids"]:
-        valid = ", ".join([f"{k} ({v})" for k, v in catalog["model_store_names"].items()])
-        errors.append(f"Invalid modelStoreId: {config['modelStoreId']}\nValid options: {valid}")
+    # Validate compute configuration
+    if "compute" not in config:
+        errors.append("Missing 'compute' configuration section")
+    else:
+        compute_config = config["compute"]
+        if "gpu_type_id" not in compute_config:
+            errors.append("Missing 'compute.gpu_type_id' in configuration")
+
+    if mode == "pod":
+        # Validate pod-specific configuration
+        if "pod" not in config:
+            errors.append("Missing 'pod' configuration section for pod mode")
+        else:
+            pod_config = config["pod"]
+            if "template_id" not in pod_config:
+                errors.append("Missing 'pod.template_id' in configuration")
+
+    elif mode == "serverless":
+        # Validate serverless-specific configuration
+        if "serverless" not in config:
+            errors.append("Missing 'serverless' configuration section for serverless mode")
+        else:
+            serverless_config = config["serverless"]
+            if "template_id" not in serverless_config:
+                errors.append("Missing 'serverless.template_id' in configuration")
 
     if errors:
         print("❌ Configuration validation failed:")
@@ -395,64 +481,164 @@ def health_check_proxy(proxy_port=8000, timeout=5):
 
 
 async def start_pod_async(config, adjusted_runtime=None):
-    """Start a new pod using the service layer."""
+    """Start a new pod or serverless endpoint using the service layer."""
     if dry_run:
-        print("🧪 Dry-run: Simulating pod start.")
+        print("🧪 Dry-run: Simulating pod/endpoint start.")
         return
 
-    log("Starting pod via RunPod API...")
-    deps = get_default_dependencies()
-    pod_service = PodManagementService(deps)
+    mode = config.get("mode", "pod")
+    log(f"Starting {mode} via RunPod API...")
+    deps = get_dependencies()
 
     try:
-        pod_id = await pod_service.create_pod(config)
-        log(f"Pod created: {pod_id}")
-        print("⏳ Waiting for pod to become ready...")
-
-        # Wait for pod to be ready
-        initial_wait = config.get("initial_wait_seconds", 10)
-        await asyncio.sleep(initial_wait)
-
-        max_attempts = config.get("max_startup_attempts", 20)
-        poll_interval = config.get("poll_interval_seconds", 5)
-
-        for attempt in range(max_attempts):
-            pod = await pod_service.get_pod_status(pod_id)
-            if pod["status"] == "RUNNING" and pod.get("ip"):
-                port = pod["ports"][0]["publicPort"]
-                update_proxy(pod["ip"], port, config)
-
-                if not dry_run:
-                    # Health check would need to be implemented in service
-                    # For now, assume it's working
-                    pass
-
-                start = datetime.now(timezone.utc)
-                runtime = config.get("runtime_seconds", 3600)
-                end = start + timedelta(seconds=runtime)
-
-                state = {
-                    "pod_id": pod_id,
-                    "start_time": start.isoformat(),
-                    "end_time": end.isoformat(),
-                    "config_snapshot": config,
-                }
-                save_state(state)
-
-                print(f"✅ Pod ready: {pod_id}")
-                return
-
-            log(f"Status: {pod['status']}. Waiting... (attempt {attempt + 1}/{max_attempts})")
-            await asyncio.sleep(poll_interval)
-
-        print("❌ Pod did not become ready in time.")
-        shutdown({"pod_id": pod_id})
-        sys.exit(1)
+        if mode == "pod":
+            await start_pod_mode(config, deps, adjusted_runtime)
+        elif mode == "serverless":
+            await start_serverless_mode(config, deps, adjusted_runtime)
+        else:
+            raise ValueError(f"Invalid mode: {mode}. Must be 'pod' or 'serverless'")
 
     except Exception as e:
-        log(f"Failed to start pod: {e}")
-        print(f"❌ Failed to start pod: {e}")
+        log(f"Failed to start {mode}: {e}")
+        print(f"❌ Failed to start {mode}: {e}")
         sys.exit(1)
+
+
+async def start_pod_mode(config, deps, adjusted_runtime=None):
+    """Start a pod in pod mode."""
+    pod_service = PodManagementService(deps)
+
+    # Prepare pod configuration from the new config structure
+    pod_config = {
+        "template_id": config["pod"]["template_id"],
+        "gpu_type_id": config["compute"]["gpu_type_id"],
+        "gpu_count": config["compute"].get("gpu_count", 1),
+        "model_name": config["model"]["name"],
+        "model_path": config["model"].get("path"),
+        "container_disk_gb": config["pod"].get("container_disk_gb", 20),
+        "volume_gb": config["pod"].get("volume_gb", 0),
+        "start_jupyter": config["pod"].get("start_jupyter", False),
+        "name": config["pod"].get("name", "runpod-llm"),
+        "cloud_type": config["compute"].get("cloud_type", "SECURE"),
+    }
+
+    # Add any additional environment variables
+    if "env" in config["pod"]:
+        pod_config["env"] = config["pod"]["env"]
+
+    pod_id = await pod_service.create_pod(pod_config)
+    log(f"Pod created: {pod_id}")
+    print("⏳ Waiting for pod to become ready...")
+
+    # Wait for pod to be ready
+    initial_wait = config.get("initial_wait_seconds", 10)
+    await asyncio.sleep(initial_wait)
+
+    max_attempts = config.get("max_startup_attempts", 20)
+    poll_interval = config.get("poll_interval_seconds", 5)
+
+    for attempt in range(max_attempts):
+        pod = await pod_service.get_pod_status(pod_id)
+        if pod["status"] == "RUNNING" and pod.get("ip"):
+            port = pod["ports"][0]["privatePort"] if pod["ports"] else 8888
+            update_proxy(pod["ip"], port, config)
+
+            start = datetime.now(timezone.utc)
+            runtime = adjusted_runtime or config.get("runtime_seconds", 3600)
+            end = start + timedelta(seconds=runtime)
+
+            state = {
+                "mode": "pod",
+                "pod_id": pod_id,
+                "start_time": start.isoformat(),
+                "end_time": end.isoformat(),
+                "config_snapshot": config,
+            }
+            save_state(state)
+
+            print(f"✅ Pod ready: {pod_id}")
+            return
+
+        log(f"Status: {pod['status']}. Waiting... (attempt {attempt + 1}/{max_attempts})")
+        await asyncio.sleep(poll_interval)
+
+    print("❌ Pod did not become ready in time.")
+    shutdown({"mode": "pod", "pod_id": pod_id})
+    sys.exit(1)
+
+
+async def start_serverless_mode(config, deps, adjusted_runtime=None):
+    """Start a serverless endpoint in serverless mode."""
+    from .serverless_service import ServerlessService
+
+    serverless_service = ServerlessService(deps)
+
+    # Prepare serverless configuration from the new config structure
+    endpoint_config = {
+        "name": config["serverless"].get("name", "vllm-llm-endpoint"),
+        "template_id": config["serverless"]["template_id"],
+        "gpu_type_id": config["compute"]["gpu_type_id"],
+        "gpu_count": config["compute"].get("gpu_count", 1),
+        "model_name": config["model"]["name"],
+        "model_path": config["model"].get("path"),
+        "image_name": config["serverless"].get("image_name", "runpod/vllm:latest"),
+        "container_disk_gb": config["serverless"].get("container_disk_gb", 20),
+        "worker_count": config["serverless"].get("worker_count", 1),
+        "min_workers": config["serverless"].get("min_workers", 0),
+        "max_workers": config["serverless"].get("max_workers", 3),
+        "idle_timeout": config["serverless"].get("idle_timeout", 300),
+        "use_model_store": config["serverless"].get("use_model_store", True),
+    }
+
+    # Add vLLM-specific configuration
+    if "vllm" in config["serverless"]:
+        endpoint_config.update(config["serverless"]["vllm"])
+
+    # Add any additional environment variables
+    if "env" in config["serverless"]:
+        endpoint_config["env"] = config["serverless"]["env"]
+
+    endpoint_id = await serverless_service.create_vllm_endpoint(endpoint_config)
+    log(f"Serverless endpoint created: {endpoint_id}")
+    print("⏳ Waiting for endpoint to become ready...")
+
+    # Wait for endpoint to be ready
+    initial_wait = config.get("initial_wait_seconds", 10)
+    await asyncio.sleep(initial_wait)
+
+    max_attempts = config.get("max_startup_attempts", 20)
+    poll_interval = config.get("poll_interval_seconds", 5)
+
+    for attempt in range(max_attempts):
+        endpoint = await serverless_service.get_endpoint_status(endpoint_id)
+        worker_count = endpoint.get("workerCount", 0)
+
+        if worker_count > 0:
+            # Endpoint is ready with workers
+            print(f"✅ Endpoint ready: {endpoint_id} (workers: {worker_count})")
+
+            start = datetime.now(timezone.utc)
+            runtime = adjusted_runtime or config.get("runtime_seconds", 3600)
+            end = start + timedelta(seconds=runtime)
+
+            state = {
+                "mode": "serverless",
+                "endpoint_id": endpoint_id,
+                "start_time": start.isoformat(),
+                "end_time": end.isoformat(),
+                "config_snapshot": config,
+            }
+            save_state(state)
+
+            print(f"✅ Serverless endpoint ready: {endpoint_id}")
+            return
+
+        log(f"Workers: {worker_count}. Waiting... (attempt {attempt + 1}/{max_attempts})")
+        await asyncio.sleep(poll_interval)
+
+    print("❌ Endpoint did not become ready in time.")
+    shutdown({"mode": "serverless", "endpoint_id": endpoint_id})
+    sys.exit(1)
 
 
 def start_pod(config, adjusted_runtime=None):
@@ -480,50 +666,99 @@ def main():
             return
 
         if state:
+            mode = state.get("mode", "pod")
+
             # Step 1: Check expiry
             if pod_is_expired(state, config):
-                print("⏳ Pod has expired. Shutting down.")
+                print(f"⏳ {mode.title()} has expired. Shutting down.")
                 shutdown(state)
                 return
 
-            # Step 2: Query pod status
-            pod_id = state.get("pod_id")
+            # Step 2: Query status based on mode
             try:
-                # For CLI, we'll use synchronous approach
-                # In a full implementation, this would be async
-                pod = {
-                    "status": "RUNNING",
-                    "ip": "127.0.0.1",
-                    "ports": [{"publicPort": 8000}],
-                }
+                if mode == "pod":
+                    pod_id = state.get("pod_id")
+                    if pod_id:
+                        # Use service layer for proper async pod status checking
+                        deps = get_dependencies()
+                        pod_service = PodManagementService(deps)
+
+                        try:
+                            pod_status = asyncio.run(pod_service.get_pod_status(pod_id))
+                            status = pod_status.get("status")
+
+                            if status == "RUNNING":
+                                ip = pod_status.get("ip")
+                                ports = pod_status.get("ports", [])
+                                if ip and ports:
+                                    port = ports[0].get("privatePort", 8888) if ports else 8888
+                                    print(f"✅ Pod {pod_id} is healthy and running at {ip}:{port}")
+                                    return
+                                else:
+                                    print(
+                                        f"⚠️ Pod {pod_id} is running but missing IP/port information"
+                                    )
+                                    return
+                            elif status in ["TERMINATED", "FAILED", "CANCELLED"]:
+                                # Restart pod
+                                end = datetime.fromisoformat(state["end_time"])
+                                remaining = max(
+                                    (end - datetime.now(timezone.utc)).total_seconds(), 300
+                                )
+                                adjusted_config = config.copy()
+                                adjusted_config["runtime_seconds"] = int(remaining)
+                                log(
+                                    f"🔁 Pod {pod_id} was {status.lower()}. Restarting with adjusted runtime: {int(remaining)} seconds"
+                                )
+                                os.remove(STATE_PATH)
+                                start_pod(adjusted_config)
+                                return
+                            else:
+                                print(f"ℹ️ Pod {pod_id} status is '{status}'. No action taken.")
+                                return
+                        except Exception as e:
+                            log(f"Error checking pod status: {e}")
+                            print(f"⚠️ Could not check pod {pod_id} status: {e}")
+                            print("🌐 Network issue detected. Skipping restart.")
+                            return
+                    else:
+                        print("⚠️ No pod_id in state. Starting new pod.")
+                        start_pod(config)
+                elif mode == "serverless":
+                    endpoint_id = state.get("endpoint_id")
+                    if endpoint_id:
+                        # Use service layer for proper async endpoint status checking
+                        deps = get_dependencies()
+                        serverless_service = ServerlessService(deps)
+
+                        try:
+                            endpoint_status = asyncio.run(
+                                serverless_service.get_endpoint_status(endpoint_id)
+                            )
+                            worker_count = endpoint_status.get("workerCount", 0)
+
+                            if worker_count > 0:
+                                print(
+                                    f"✅ Serverless endpoint {endpoint_id} is healthy with {worker_count} worker(s)"
+                                )
+                                return
+                            else:
+                                print(
+                                    f"⚠️ Serverless endpoint {endpoint_id} has no active workers. Starting new endpoint."
+                                )
+                                start_pod(config)
+                                return
+                        except Exception as e:
+                            log(f"Error checking endpoint status: {e}")
+                            print(f"⚠️ Could not check endpoint {endpoint_id} status: {e}")
+                            print("🌐 Network issue detected. Skipping restart.")
+                            return
             except Exception as e:
-                log(f"⚠️ Error querying pod status: {e}")
+                log(f"⚠️ Error querying {mode} status: {e}")
                 print("🌐 Network issue detected. Skipping restart.")
                 return
 
-            status = pod.get("status")
-            if status == "RUNNING":
-                print("✅ Pod is healthy and running.")
-                return
-
-            if status in ["TERMINATED", "FAILED", "CANCELLED"]:
-                # Step 3: Adjust runtime
-                end = datetime.fromisoformat(state["end_time"])
-                remaining = max((end - datetime.now(timezone.utc)).total_seconds(), 300)
-                adjusted_config = config.copy()
-                adjusted_config["runtime_seconds"] = int(remaining)
-                log(
-                    f"🔁 Pod was terminated. Restarting with adjusted runtime: {int(remaining)} seconds"
-                )
-                state_path = os.getenv("STATE_PATH", "pod_state.json")
-                os.remove(state_path)
-                start_pod(adjusted_config)
-                return
-
-            print(f"ℹ️ Pod status is '{status}'. No action taken.")
-            return
-
-        # Starting a new pod
+        # Starting a new pod/endpoint
         catalog = refresh_catalog() if refresh_flag else None
         if catalog:
             validate_config(config, catalog)

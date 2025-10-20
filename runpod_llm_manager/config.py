@@ -49,6 +49,9 @@ class AppConfig(BaseSettings):
     enable_profiling: bool = Field(default=False, description="Enable debug profiling endpoints")
     use_https: bool = Field(default=False, description="Enable HTTPS mode")
 
+    # Server Settings
+    port: int = Field(default=8000, description="Server port number", ge=1024, le=65535)
+
     # SSL Settings
     ssl_cert: Optional[str] = Field(default=None, description="Path to SSL certificate file")
     ssl_key: Optional[str] = Field(default=None, description="Path to SSL private key file")

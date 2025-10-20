@@ -10,12 +10,14 @@ from typing import Any, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from .config import config
-from .dependencies import Dependencies, get_default_dependencies
+from .dependencies import Dependencies, get_dependencies
+from .health_service import HealthService
+from .llm_service import LLMService
+from .metrics_service import MetricsService
 from .proxy_fastapi_models import ChatCompletionRequest
-from .services import HealthService, LLMService, MetricsService
 
 # Setup logging
 logging.basicConfig(
@@ -25,23 +27,32 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Global services (initialized on startup)
-llm_service: Optional[LLMService] = None
-health_service: Optional[HealthService] = None
-metrics_service: Optional[MetricsService] = None
+llm_service: LLMService
+health_service: HealthService
+metrics_service: MetricsService
+_app_start_time: float = 0.0
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
-    global llm_service, health_service, metrics_service
+    global llm_service, health_service, metrics_service, _app_start_time
+
+    # Record start time
+    import time
+
+    _app_start_time = time.time()
 
     # Initialize services on startup
-    deps = get_default_dependencies()
+    deps = get_dependencies()
     llm_service = LLMService(deps)
     health_service = HealthService(deps)
     metrics_service = MetricsService(deps)
 
-    logger.info("Services initialized successfully")
+    # Connect services for cross-service communication
+    llm_service.set_metrics_service(metrics_service)
+
+    logger.info("Services and middleware initialized successfully")
     yield
     logger.info("Application shutting down")
 
@@ -63,29 +74,31 @@ app.add_middleware(
 )
 
 
-# Rate limiting middleware
+# Rate limiting middleware with dependency injection
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
+    """Rate limiting middleware with dependency injection."""
+    deps = get_dependencies()
+
     client_ip = request.client.host if request.client else "unknown"
-    deps = get_default_dependencies()
 
     if not deps.rate_limiter.is_allowed(client_ip):
         remaining = deps.rate_limiter.get_remaining_requests(client_ip)
         from datetime import datetime, timedelta
 
-        reset_time = datetime.now() + timedelta(seconds=config.rate_limit_window)
+        reset_time = datetime.now() + timedelta(seconds=deps.config.rate_limit_window)
 
         return JSONResponse(
             status_code=429,
             content={
                 "error": "Rate limit exceeded",
-                "message": f"Too many requests. Limit: {config.rate_limit_requests} per {config.rate_limit_window} seconds",
+                "message": f"Too many requests. Limit: {deps.config.rate_limit_requests} per {deps.config.rate_limit_window} seconds",
                 "retry_after": int((reset_time - datetime.now()).total_seconds()),
                 "remaining_requests": remaining,
             },
             headers={
                 "Retry-After": str(int((reset_time - datetime.now()).total_seconds())),
-                "X-RateLimit-Limit": str(config.rate_limit_requests),
+                "X-RateLimit-Limit": str(deps.config.rate_limit_requests),
                 "X-RateLimit-Remaining": str(remaining),
                 "X-RateLimit-Reset": str(int(reset_time.timestamp())),
             },
@@ -95,9 +108,12 @@ async def rate_limit_middleware(request: Request, call_next):
     return response
 
 
-# Security headers middleware
+# Security headers middleware with dependency injection
 @app.middleware("http")
 async def security_headers_middleware(request: Request, call_next):
+    """Security headers middleware with dependency injection."""
+    deps = get_dependencies()
+
     response = await call_next(request)
 
     # Security headers
@@ -108,7 +124,7 @@ async def security_headers_middleware(request: Request, call_next):
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
 
     # HTTPS enforcement (HSTS) - only if HTTPS is enabled
-    if config.use_https:
+    if deps.config.use_https:
         response.headers["Strict-Transport-Security"] = (
             "max-age=31536000; includeSubDomains; preload"
         )
@@ -169,13 +185,15 @@ async def dashboard(request: Request):
     metrics_info = await metrics_service.get_metrics()
 
     # System information
+    import os
     import sys
 
     system_info = {
         "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
         "platform": sys.platform,
-        "pid": 0,  # Would need to get actual PID
-        "working_directory": "",  # Would need to get actual working directory
+        "pid": os.getpid(),
+        "working_directory": os.getcwd(),
+        "app_uptime_seconds": time.time() - _app_start_time if _app_start_time > 0 else 0,
     }
 
     return {
@@ -187,7 +205,7 @@ async def dashboard(request: Request):
             "cache_dir": config.cache_dir,
             "max_cache_size": config.max_cache_size,
             "max_cache_bytes": config.cache_size_bytes,
-            "profiling_enabled": False,  # Would need to add to config
+            "profiling_enabled": getattr(config, "profiling_enabled", False),
             "security": {
                 "rate_limiting_enabled": True,
                 "input_validation_enabled": True,
@@ -204,13 +222,27 @@ async def chat_completions(request: ChatCompletionRequest):
     if llm_service is None:
         raise HTTPException(status_code=503, detail="Service not initialized")
 
-    try:
-        return await llm_service.process_completion_request(request)
-    except Exception as e:
-        # Log security-relevant errors
-        client_ip = getattr(request, "client", None)
-        client_ip = client_ip.host if client_ip else "unknown"
+    start_time = time.time()
+    client_ip = getattr(request, "client", None)
+    client_ip = client_ip.host if client_ip else "unknown"
 
+    try:
+        deps = get_dependencies()
+        response = await llm_service.process_completion_request(
+            request, deps.config.runpod_endpoint
+        )
+
+        # Record metrics
+        response_time = time.time() - start_time
+        metrics_service.record_request("/v1/chat/completions", client_ip, response_time, 200)
+
+        return response
+    except Exception as e:
+        # Record error metrics
+        response_time = time.time() - start_time
+        metrics_service.record_request("/v1/chat/completions", client_ip, response_time, 500)
+
+        # Log security-relevant errors
         log_security_event(
             "CHAT_COMPLETION_ERROR",
             {"client_ip": client_ip, "path": "/v1/chat/completions", "error": str(e)},
@@ -221,9 +253,74 @@ async def chat_completions(request: ChatCompletionRequest):
 @app.post("/v1/chat/completions/stream")
 async def chat_completions_stream(request: ChatCompletionRequest):
     """Streaming version for ultra-low latency responses."""
-    # For now, delegate to regular handler
-    # In a full implementation, this would return a streaming response
-    return await chat_completions(request)
+    if llm_service is None:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    try:
+        # Set streaming flag for the request
+        request.stream = True
+
+        # Get dependencies for streaming HTTP client
+        deps = get_dependencies()
+
+        # Get endpoint URL
+        endpoint_url = llm_service.endpoint_url or deps.config.runpod_endpoint
+
+        # Convert request to payload
+        if hasattr(request, "model_dump"):
+            payload = request.model_dump()
+        elif hasattr(request, "__dict__"):
+            payload = vars(request)
+        else:
+            payload = (
+                dict(request)
+                if hasattr(request, "__iter__") and hasattr(request, "keys")
+                else request
+            )
+
+        # Ensure payload is a dict
+        if not isinstance(payload, dict):
+            payload = {"request": payload}
+
+        # Stream the response directly from the LLM endpoint
+        async def generate_stream():
+            """Generator that forwards streaming response from LLM."""
+            try:
+                # Use streaming HTTP client to get response chunks
+                import httpx
+
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    async with client.stream("POST", endpoint_url, json=payload) as response:
+                        response.raise_for_status()
+                        async for line in response.aiter_lines():
+                            # Forward each line as-is (assuming LLM returns proper SSE format)
+                            if line.strip():  # Skip empty lines
+                                yield f"{line}\n"
+
+            except Exception as e:
+                # Send error in stream format
+                error_chunk = {
+                    "error": {"message": f"Streaming error: {str(e)}", "type": "internal_error"}
+                }
+                yield f"data: {error_chunk}\n\n"
+                yield "data: [DONE]\n\n"
+
+        return StreamingResponse(
+            generate_stream(),
+            media_type="text/plain",
+            headers={"Content-Type": "text/event-stream", "Cache-Control": "no-cache"},
+        )
+
+    except Exception as e:
+        # Log security-relevant errors
+        client_ip = getattr(request, "client", None)
+        client_ip = client_ip.host if client_ip else "unknown"
+
+        log_security_event(
+            "CHAT_COMPLETION_STREAM_ERROR",
+            {"client_ip": client_ip, "path": "/v1/chat/completions/stream", "error": str(e)},
+        )
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # Development endpoints
@@ -232,8 +329,35 @@ if config.test_mode or True:  # Enable for development
     @app.get("/debug/cache")
     async def debug_cache():
         """Debug endpoint to inspect cache contents (development only)."""
-        # Placeholder - would need to implement cache inspection
-        return {"message": "Cache debug not implemented in service layer"}
+        deps = get_dependencies()
+
+        # Get cache statistics if available
+        cache_info = {
+            "cache_type": type(deps.cache).__name__,
+            "cache_entries": (
+                getattr(deps.cache, "_store", {}).__len__() if hasattr(deps.cache, "_store") else 0
+            ),
+        }
+
+        # For InMemoryCache, show actual contents
+        if hasattr(deps.cache, "_store"):
+            cache_contents = {}
+            store = getattr(deps.cache, "_store", {})
+            for key, value in store.items():
+                # Truncate long keys/values for display
+                display_key = key[:50] + "..." if len(key) > 50 else key
+                if isinstance(value, dict):
+                    display_value = {
+                        k: (str(v)[:100] + "..." if len(str(v)) > 100 else v)
+                        for k, v in value.items()
+                    }
+                else:
+                    display_value = str(value)[:100] + "..." if len(str(value)) > 100 else value
+                cache_contents[display_key] = display_value
+
+            cache_info["contents"] = cache_contents
+
+        return cache_info
 
 
 # Server startup
@@ -243,7 +367,7 @@ if __name__ == "__main__":
     uvicorn_config: dict[str, Any] = {
         "app": app,
         "host": "0.0.0.0",
-        "port": int(config.__dict__.get("port", 8000)),  # Would need to add to config
+        "port": config.port,
         "log_level": "info",
     }
 

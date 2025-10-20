@@ -28,7 +28,7 @@ This advanced system automates the full lifecycle of GPU-backed LLM pods on RunP
 | `manage_pod.py`               | 🚀 Unified lifecycle controller: start, restart, terminate, watchdog        |
 | `proxy_fastapi.py`            | ⚡ FastAPI proxy with caching, metrics, SSL, and security monitoring        |
 | `security_utils.py`           | 🔒 Security utilities: SBOM generation, vulnerability scanning, compliance |
-| `pod_config.json`             | ⚙️ Configuration file with model, GPU, cache, SSL, and runtime settings     |
+| `llm_config.json`             | ⚙️ Configuration file with model, GPU, cache, SSL, and runtime settings     |
 | `pod_state.json`              | 📊 Auto-generated state file storing pod ID, model, and runtime info        |
 | `requirements.txt`            | 📦 Python dependencies with security and compliance tools                   |
 | `SECURITY.md`                 | 🛡️ Comprehensive security documentation and compliance guide                |
@@ -187,16 +187,43 @@ Ensures all pods are terminated at midnight regardless of state:
 
 ## � Configuration
 
-Create `pod_config.json` with comprehensive settings:
+Create `llm_config.json` with comprehensive settings:
 
-### 📋 Basic Configuration
+### 📋 Basic Configuration (Pod Mode)
 
 ```json
 {
-  "modelStoreId": "deepseek-ai/deepseek-coder-33b-awq",
-  "gpu_type_id": "NVIDIA RTX A6000",
-  "runtime_seconds": 3600,
-  "template_id": "vllm"
+  "mode": "pod",
+  "model": {
+    "name": "deepseek-ai/deepseek-coder-33b-awq"
+  },
+  "compute": {
+    "gpu_type_id": "NVIDIA GeForce RTX 5090",
+    "gpu_count": 1
+  },
+  "pod": {
+    "template_id": "Runpod Pytorch 2.8.0",
+    "container_disk_gb": 20
+  }
+}
+```
+
+### 📋 Basic Configuration (Serverless Mode)
+
+```json
+{
+  "mode": "serverless",
+  "model": {
+    "name": "deepseek-ai/deepseek-coder-33b-awq"
+  },
+  "compute": {
+    "gpu_type_id": "NVIDIA GeForce RTX 5090",
+    "gpu_count": 1
+  },
+  "serverless": {
+    "template_id": "vllm-template",
+    "use_model_store": true
+  }
 }
 ```
 
@@ -204,48 +231,83 @@ Create `pod_config.json` with comprehensive settings:
 
 ```json
 {
-  "modelStoreId": "deepseek-ai/deepseek-coder-33b-awq",
-  "gpu_type_id": "NVIDIA RTX A6000",
-  "runtime_seconds": 3600,
-  "template_id": "vllm",
-
-  // Proxy Configuration
-  "proxy_port": 8000,
-  "cache_dir": "/tmp/llm_cache",
-
-  // SSL/TLS Configuration
-  "use_https": false,
-  "ssl_cert": "/path/to/cert.pem",
-  "ssl_key": "/path/to/key.pem",
-
-  // Cache Configuration
-  "max_cache_size": 1000,
-  "max_cache_bytes": 1073741824,
-
-  // Performance & Monitoring
-  "enable_profiling": false
+  "mode": "serverless",
+  "model": {
+    "name": "deepseek-ai/deepseek-coder-33b-awq",
+    "path": "/workspace/models"
+  },
+  "compute": {
+    "gpu_type_id": "NVIDIA GeForce RTX 5090",
+    "gpu_count": 1,
+    "cloud_type": "SECURE"
+  },
+  "serverless": {
+    "template_id": "vllm-template",
+    "image_name": "runpod/vllm:latest",
+    "container_disk_gb": 20,
+    "worker_count": 1,
+    "min_workers": 0,
+    "max_workers": 3,
+    "idle_timeout": 300,
+    "use_model_store": true,
+    "vllm": {
+      "tensor_parallel_size": 1,
+      "gpu_memory_utilization": 0.9,
+      "max_model_len": 4096,
+      "enforce_eager": false
+    }
+  },
+  "networking": {
+    "nginx_port": 8080
+  }
 }
 ```
 
 ### 🔍 Configuration Parameters
 
+#### Core Configuration
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `modelStoreId` | string | required | Model Store model identifier |
-| `gpu_type_id` | string | required | GPU type for pod deployment |
-| `runtime_seconds` | int | 3600 | Maximum pod runtime in seconds |
-| `template_id` | string | "vllm" | RunPod template identifier |
-| `proxy_port` | int | 8000 | Local proxy port |
-| `cache_dir` | string | "/tmp/llm_cache" | Cache directory path |
-| `use_https` | boolean | false | Enable SSL/TLS |
-| `ssl_cert` | string | null | SSL certificate file path |
-| `ssl_key` | string | null | SSL private key file path |
-| `max_cache_size` | int | 1000 | Maximum cached responses |
-| `max_cache_bytes` | int | 1GB | Maximum cache size in bytes |
-| `enable_profiling` | boolean | false | Enable debug/profiling endpoints |
-| `initial_wait_seconds` | int | 10 | Seconds to wait after pod creation before checking status |
-| `max_startup_attempts` | int | 20 | Maximum attempts to wait for pod to become ready |
-| `poll_interval_seconds` | int | 5 | Seconds between pod status checks during startup |
+| `mode` | string | "pod" | Execution mode: "pod" or "serverless" |
+| `model.name` | string | required | Model identifier (Hugging Face format) |
+| `model.path` | string | null | Local model path override |
+| `compute.gpu_type_id` | string | required | GPU type for deployment |
+| `compute.gpu_count` | int | 1 | Number of GPUs to use |
+| `compute.cloud_type` | string | "SECURE" | Cloud type: "SECURE" or "COMMUNITY" |
+
+#### Pod Mode Configuration
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `pod.template_id` | string | required | RunPod pod template identifier |
+| `pod.container_disk_gb` | int | 20 | Container disk size in GB |
+| `pod.volume_gb` | int | 0 | Persistent volume size in GB |
+| `pod.start_jupyter` | boolean | false | Start Jupyter notebook |
+| `pod.name` | string | "runpod-llm" | Pod display name |
+
+#### Serverless Mode Configuration
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `serverless.template_id` | string | required | Serverless template identifier |
+| `serverless.image_name` | string | "runpod/vllm:latest" | Docker image for serverless |
+| `serverless.container_disk_gb` | int | 20 | Container disk size in GB |
+| `serverless.worker_count` | int | 1 | Initial number of workers |
+| `serverless.min_workers` | int | 0 | Minimum number of workers |
+| `serverless.max_workers` | int | 3 | Maximum number of workers |
+| `serverless.idle_timeout` | int | 300 | Idle timeout in seconds |
+| `serverless.use_model_store` | boolean | true | Enable ModelStore optimization |
+| `serverless.vllm.tensor_parallel_size` | int | 1 | vLLM tensor parallelism |
+| `serverless.vllm.gpu_memory_utilization` | float | 0.9 | GPU memory utilization |
+| `serverless.vllm.max_model_len` | int | 4096 | Maximum model sequence length |
+| `serverless.vllm.enforce_eager` | boolean | false | Force eager execution |
+
+#### Server Configuration
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `port` | int | 8000 | Server port number (1024-65535) |
+| `use_https` | boolean | false | Enable HTTPS mode |
+| `ssl_cert` | string | null | Path to SSL certificate file |
+| `ssl_key` | string | null | Path to SSL private key file |
+| `allowed_origins` | string | "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8080" | Comma-separated list of allowed CORS origins |
 ### 🔍 Discovering Supported Models via RunPod UI
 
 RunPod supports a wide range of open-source models for vLLM pods. To explore available options:
@@ -303,7 +365,7 @@ http://localhost:8000/v1/chat/completions
 - **Health Check**: `GET /health` - includes rate limiting status
 - **Metrics**: `GET /metrics` - performance and cache statistics
 - **Dashboard**: `GET /dashboard` - comprehensive system overview with security info
-- **Debug Cache** (if profiling enabled): `GET /debug/cache`
+- **Debug Cache** (development mode only): `GET /debug/cache`
 
 ### 📈 Monitoring & Metrics
 
@@ -330,12 +392,16 @@ export CACHE_SIZE_BYTES="2147483648"  # 2GB cache
 export ENABLE_PROFILING="true"        # Enable debug endpoints
 export PREWARM_CACHE="true"           # Pre-populate cache with common patterns
 
+# Server configuration
+export PORT="8000"                     # Server port number
+export USE_HTTPS="false"               # Enable HTTPS
+export SSL_CERT="/path/to/cert.pem"    # SSL certificate path
+export SSL_KEY="/path/to/key.pem"      # SSL private key path
+export ALLOWED_ORIGINS="http://localhost:3000,http://127.0.0.1:3000,http://localhost:8080"  # CORS origins
+
 # Security configuration
 export RATE_LIMIT_REQUESTS="60"       # Requests per window
 export RATE_LIMIT_WINDOW="60"         # Window in seconds
-export USE_HTTPS="false"              # Enable HTTPS
-export SSL_CERT="/path/to/cert.pem"   # SSL certificate path
-export SSL_KEY="/path/to/key.pem"     # SSL private key path
 ```
 
 ## 🔐 Security & Compliance
@@ -447,7 +513,7 @@ with the following content:
 - **`title`**: Friendly display name for your model in Continue.
 - **`provider`**: Must be `"openai"` since the RunPod endpoint is OpenAI-compatible.
 - **`model`**: The exact model identifier you configured for your pod.
-- **`apiBase`**: The local URL exposed by your FastAPI proxy (`localhost` and port should match your config, default: 8000).
+- **`apiBase`**: The local URL exposed by your FastAPI proxy (`http://localhost:8000/v1`).
 
 This setup tells Continue to send requests to your RunPod pod’s OpenAI-compatible API endpoint running locally. Remember to restart the Continue extension after saving the config for changes to take effect.
 
@@ -560,10 +626,12 @@ chmod 755 /tmp/llm_cache
 ```
 
 #### ❌ `Port already in use`
-**Solution**: Change proxy port in `pod_config.json`:
+**Solution**: Change proxy port in `llm_config.json`:
 ```json
 {
-  "proxy_port": 8001
+  "networking": {
+    "nginx_port": 8001
+  }
 }
 ```
 
@@ -689,7 +757,7 @@ This system is designed to be:
 - **Secure**: Follows security best practices
 
 ### Adding New Features
-1. Add configuration options to `pod_config.json`
+1. Add configuration options to `llm_config.json`
 2. Implement functionality in appropriate module
 3. Add metrics and logging
 4. Update documentation
